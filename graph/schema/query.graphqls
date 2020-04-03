@@ -1,10 +1,10 @@
 type Query {
-  users(id : Int!): [User]
+  users(id : Int!): User
   user: [User]
 
-  usecase(id : Int!): [Usecase]!
+  usecase(id : Int!): Usecase
   usecases: [Usecase]!
 
-  case(id : Int!): [Case]!
+  case(id : Int!): Case
   cases: [Case]!
 }

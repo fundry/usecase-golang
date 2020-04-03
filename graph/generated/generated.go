@@ -95,11 +95,11 @@ type MutationResolver interface {
 	CreateUsecase(ctx context.Context, input model.NewUsecase) (*model.Usecase, error)
 }
 type QueryResolver interface {
-	Users(ctx context.Context, id int) ([]*model.User, error)
+	Users(ctx context.Context, id int) (*model.User, error)
 	User(ctx context.Context) ([]*model.User, error)
-	Usecase(ctx context.Context, id int) ([]*model.Usecase, error)
+	Usecase(ctx context.Context, id int) (*model.Usecase, error)
 	Usecases(ctx context.Context) ([]*model.Usecase, error)
-	Case(ctx context.Context, id int) ([]*model.Case, error)
+	Case(ctx context.Context, id int) (*model.Case, error)
 	Cases(ctx context.Context) ([]*model.Case, error)
 }
 
@@ -430,13 +430,13 @@ directive @goField(forceResolver: Boolean, name: String) on INPUT_FIELD_DEFINITI
    createUsecase(input: NewUsecase!): Usecase!
 }`, BuiltIn: false},
 	&ast.Source{Name: "graph/schema/query.graphqls", Input: `type Query {
-  users(id : Int!): [User]
+  users(id : Int!): User
   user: [User]
 
-  usecase(id : Int!): [Usecase]!
+  usecase(id : Int!): Usecase
   usecases: [Usecase]!
 
-  case(id : Int!): [Case]!
+  case(id : Int!): Case
   cases: [Case]!
 }
 `, BuiltIn: false},
@@ -972,9 +972,9 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.User)
+	res := resTmp.(*model.User)
 	fc.Result = res
-	return ec.marshalOUser2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1039,14 +1039,11 @@ func (ec *executionContext) _Query_usecase(ctx context.Context, field graphql.Co
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Usecase)
+	res := resTmp.(*model.Usecase)
 	fc.Result = res
-	return ec.marshalNUsecase2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUsecase(ctx, field.Selections, res)
+	return ec.marshalOUsecase2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUsecase(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_usecases(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1114,14 +1111,11 @@ func (ec *executionContext) _Query_case(ctx context.Context, field graphql.Colle
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Case)
+	res := resTmp.(*model.Case)
 	fc.Result = res
-	return ec.marshalNCase2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐCase(ctx, field.Selections, res)
+	return ec.marshalOCase2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐCase(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_cases(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3033,9 +3027,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_usecase(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "usecases":
@@ -3061,9 +3052,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_case(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "cases":

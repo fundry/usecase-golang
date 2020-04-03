@@ -1,4 +1,4 @@
-package graph
+package resolvers
 
 // This file will be automatically regenerated based on the schema, any resolver implementations
 // will be copied through when generating and any unknown code will be moved to the end.
@@ -6,35 +6,17 @@ package graph
 import (
 	"context"
 	"fmt"
-	"math/rand"
 
 	"github.com/vickywane/usecase-server/graph/generated"
 	"github.com/vickywane/usecase-server/graph/model"
 )
 
 func (r *mutationResolver) CreateCase(ctx context.Context, input model.NewCase) (*model.Case, error) {
-	cases := &model.Case{
-		ID:     fmt.Sprintf("T%d", rand.Int()),
-		Name:   "",
-		Author: nil,
-	}
-
-	r.cases = append(r.cases, cases)
-	return cases, nil
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
-	user := model.User{
-		ID:    fmt.Sprintf("T%d", rand.Int()),
-		Name:  input.Name,
-		Email: input.Email,
-	}
-
-	if err := r.DB.Insert(&user); err != nil {
-		return nil, err
-	}
-
-	return &user, nil
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *mutationResolver) CreateUsecase(ctx context.Context, input model.NewUsecase) (*model.Usecase, error) {

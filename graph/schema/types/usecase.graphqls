@@ -1,4 +1,4 @@
-type Usecase{
+type Usecase@goModel(model:  "github.com/vickywane/usecase-server/graph/model.Usecase"){
     id: ID!
     title: String!
     author: String!
@@ -11,7 +11,7 @@ type Usecase{
     cases: [Case]
 }
 
-input NewUsecase {
+input NewUsecase@goModel(model:  "github.com/vickywane/usecase-server/graph/model.NewUsecase") {
     id: String!
     title: String!
     author: String!

@@ -1,4 +1,4 @@
-type User{
+type User@goModel(model:  "github.com/vickywane/usecase-server/graph/model.User"){
     id: ID!
     name: String!
     email: String
@@ -7,7 +7,7 @@ type User{
     createdAt : Time
 }
 
-input NewUser {
+input NewUser@goModel(model:  "github.com/vickywane/usecase-server/graph/model.NewUser") {
     id: String!
     name: String!
     email: String
