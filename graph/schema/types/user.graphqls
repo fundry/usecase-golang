@@ -1,0 +1,16 @@
+type User{
+    id: ID!
+    name: String!
+    email: String
+    cases: [Case]
+    usecase: [Usecase]
+    createdAt : Time
+}
+
+input NewUser {
+    id: String!
+    name: String!
+    email: String
+    createdAt : Time
+}
+

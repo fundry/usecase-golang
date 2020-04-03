@@ -1,0 +1,17 @@
+type Case
+{
+    id: ID!
+    name : String!
+    author : String
+
+    createdAt : Time
+    updateAt : Time
+}
+
+input NewCase {
+    id: String!
+    name : String!
+    author : String
+    createdAt : Time
+    updateAt : Time
+}

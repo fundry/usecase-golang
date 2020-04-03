@@ -1,0 +1,24 @@
+type Usecase{
+    id: ID!
+    title: String!
+    author: String!
+    content: String
+    tags: [String]
+    completed: Boolean
+    createdAt : Time
+    updateAt : Time
+
+    cases: [Case]
+}
+
+input NewUsecase {
+    id: String!
+    title: String!
+    author: String!
+    content: String
+    tags: String
+    completed: Boolean
+    createdAt : Time
+    updateAt : Time
+}
+
