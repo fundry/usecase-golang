@@ -4,13 +4,13 @@ type User {
     email: String
     cases: [Case]
     usecase: [Usecase]
-    createdAt : Time
+    createdAt : Time!
 }
 
 input NewUser {
-    id: Int!
     name: String!
     email: String
-    createdAt : Time
+    cases: NewCase
+    usecases: [NewUsecase]
 }
 

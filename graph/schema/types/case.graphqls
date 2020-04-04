@@ -9,7 +9,6 @@ type Case
 }
 
 input NewCase  {
-    id: Int!
     name : String!
     author : String!
 }

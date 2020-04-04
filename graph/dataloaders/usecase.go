@@ -11,13 +11,13 @@ import (
 )
 
 func Usecase(db *pg.DB, w http.ResponseWriter, r *http.Request, next http.Handler) {
-    loader := generated.NewUserLoader(generated.UserLoaderConfig{
+    loader := generated.NewUsecaseLoader(generated.UsecaseLoaderConfig{
         MaxBatch: 100,
         Wait:     1 * time.Millisecond,
         Fetch: func(keys []int) ([]*model.Usecase, []error) {
 
-            var dbUsers []*model.Usecase
-            err := db.Model(&dbUsers).WhereIn("id IN (?)", keys).Select()
+            var dbUsecases []*model.Usecase
+            err := db.Model(&dbUsecases).WhereIn("id IN (?)", keys).Select()
 
             if err != nil {
                 return []*model.Usecase{}, []error{err}
@@ -28,8 +28,8 @@ func Usecase(db *pg.DB, w http.ResponseWriter, r *http.Request, next http.Handle
             usecaseKeys := make(map[int]*model.Usecase)
             usecases := make([]*model.Usecase, len(keys))
 
-            for _, usecase := range dbUsers {
-                usecaseKeys[Usecase.ID] = usecase
+            for _, usecase := range dbUsecases {
+                usecaseKeys[11] = usecase
             }
 
             for i, k := range keys {

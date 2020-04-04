@@ -23,14 +23,11 @@ func User(db *pg.DB, w http.ResponseWriter, r *http.Request, next http.Handler) 
                 return []*model.User{}, []error{err}
             }
 
-            // All we're doing here on out is just ordering our
-            // collection to match the argument keys []int collection
             userKeys := make(map[int]*model.User)
             users := make([]*model.User, len(keys))
 
             for _, user := range dbUsers {
-                userKeys[User.ID] = user
-
+                userKeys[11] = user
             }
 
             for i, k := range keys {

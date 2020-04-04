@@ -6,6 +6,7 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/vickywane/usecase-server/graph/generated"
 	"github.com/vickywane/usecase-server/graph/model"
@@ -20,16 +21,26 @@ func (r *queryResolver) Users(ctx context.Context) (*model.User, error) {
 }
 
 func (r *queryResolver) Usecase(ctx context.Context, id int) (*model.Usecase, error) {
-	panic(fmt.Errorf("not implemented"))
+	usecase := model.Usecase{ID: id}
+
+	if err := r.DB.Select(&usecase); err != nil {
+		return nil, err
+	}
+
+	return &usecase, nil
 }
 
 func (r *queryResolver) Usecases(ctx context.Context) ([]*model.Usecase, error) {
-	panic(fmt.Errorf("not implemented"))
+	var usecases []*model.Usecase
+
+	if err := r.DB.Model(&usecases).Select(); err != nil {
+		log.Println(err)
+	}
+	return usecases, nil
 }
 
 func (r *queryResolver) Case(ctx context.Context, id int) (*model.Case, error) {
-	// case is a reserved word in GoLang
-	// causes a name conflict
+	// ====> !!Case is a reserved word in GoLang
 	casea := model.Case{ID: id}
 
 	if err := r.DB.Select(&casea); err != nil {

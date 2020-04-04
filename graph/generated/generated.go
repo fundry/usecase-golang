@@ -76,7 +76,7 @@ type ComplexityRoot struct {
 		ID        func(childComplexity int) int
 		Tags      func(childComplexity int) int
 		Title     func(childComplexity int) int
-		UpdateAt  func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
 	}
 
 	User struct {
@@ -302,12 +302,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Usecase.Title(childComplexity), true
 
-	case "Usecase.updateAt":
-		if e.complexity.Usecase.UpdateAt == nil {
+	case "Usecase.updatedAt":
+		if e.complexity.Usecase.UpdatedAt == nil {
 			break
 		}
 
-		return e.complexity.Usecase.UpdateAt(childComplexity), true
+		return e.complexity.Usecase.UpdatedAt(childComplexity), true
 
 	case "User.cases":
 		if e.complexity.User.Cases == nil {
@@ -465,7 +465,6 @@ scalar Upload
 }
 
 input NewCase  {
-    id: Int!
     name : String!
     author : String!
 }
@@ -477,21 +476,18 @@ input NewCase  {
     content: String
     tags: [String]
     completed: Boolean
-    createdAt : Time
-    updateAt : Time
+    createdAt : Time!
+    updatedAt : Time!
 
     cases: [Case]
 }
 
 input NewUsecase {
-    id: Int!
     title: String!
     author: String!
     content: String
     tags: String
     completed: Boolean
-    createdAt : Time
-    updateAt : Time
 }
 
 `, BuiltIn: false},
@@ -501,14 +497,14 @@ input NewUsecase {
     email: String
     cases: [Case]
     usecase: [Usecase]
-    createdAt : Time
+    createdAt : Time!
 }
 
 input NewUser {
-    id: Int!
     name: String!
     email: String
-    createdAt : Time
+    cases: NewCase
+    usecases: [NewUsecase]
 }
 
 `, BuiltIn: false},
@@ -1447,14 +1443,17 @@ func (ec *executionContext) _Usecase_createdAt(ctx context.Context, field graphq
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*time.Time)
+	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Usecase_updateAt(ctx context.Context, field graphql.CollectedField, obj *model.Usecase) (ret graphql.Marshaler) {
+func (ec *executionContext) _Usecase_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Usecase) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1471,18 +1470,21 @@ func (ec *executionContext) _Usecase_updateAt(ctx context.Context, field graphql
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.UpdateAt, nil
+		return obj.UpdatedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*time.Time)
+	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Usecase_cases(ctx context.Context, field graphql.CollectedField, obj *model.Usecase) (ret graphql.Marshaler) {
@@ -1701,11 +1703,14 @@ func (ec *executionContext) _User_createdAt(ctx context.Context, field graphql.C
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*time.Time)
+	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -2769,12 +2774,6 @@ func (ec *executionContext) unmarshalInputNewCase(ctx context.Context, obj inter
 
 	for k, v := range asMap {
 		switch k {
-		case "id":
-			var err error
-			it.ID, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "name":
 			var err error
 			it.Name, err = ec.unmarshalNString2string(ctx, v)
@@ -2799,12 +2798,6 @@ func (ec *executionContext) unmarshalInputNewUsecase(ctx context.Context, obj in
 
 	for k, v := range asMap {
 		switch k {
-		case "id":
-			var err error
-			it.ID, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "title":
 			var err error
 			it.Title, err = ec.unmarshalNString2string(ctx, v)
@@ -2835,18 +2828,6 @@ func (ec *executionContext) unmarshalInputNewUsecase(ctx context.Context, obj in
 			if err != nil {
 				return it, err
 			}
-		case "createdAt":
-			var err error
-			it.CreatedAt, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "updateAt":
-			var err error
-			it.UpdateAt, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		}
 	}
 
@@ -2859,12 +2840,6 @@ func (ec *executionContext) unmarshalInputNewUser(ctx context.Context, obj inter
 
 	for k, v := range asMap {
 		switch k {
-		case "id":
-			var err error
-			it.ID, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "name":
 			var err error
 			it.Name, err = ec.unmarshalNString2string(ctx, v)
@@ -2877,9 +2852,15 @@ func (ec *executionContext) unmarshalInputNewUser(ctx context.Context, obj inter
 			if err != nil {
 				return it, err
 			}
-		case "createdAt":
+		case "cases":
 			var err error
-			it.CreatedAt, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			it.Cases, err = ec.unmarshalONewCase2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewCase(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "usecases":
+			var err error
+			it.Usecases, err = ec.unmarshalONewUsecase2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUsecase(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3121,8 +3102,14 @@ func (ec *executionContext) _Usecase(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Usecase_completed(ctx, field, obj)
 		case "createdAt":
 			out.Values[i] = ec._Usecase_createdAt(ctx, field, obj)
-		case "updateAt":
-			out.Values[i] = ec._Usecase_updateAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._Usecase_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "cases":
 			out.Values[i] = ec._Usecase_cases(ctx, field, obj)
 		default:
@@ -3165,6 +3152,9 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._User_usecase(ctx, field, obj)
 		case "createdAt":
 			out.Values[i] = ec._User_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3905,6 +3895,50 @@ func (ec *executionContext) marshalOCase2ᚖgithubᚗcomᚋvickywaneᚋusecase�
 	return ec._Case(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalONewCase2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewCase(ctx context.Context, v interface{}) (model.NewCase, error) {
+	return ec.unmarshalInputNewCase(ctx, v)
+}
+
+func (ec *executionContext) unmarshalONewCase2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewCase(ctx context.Context, v interface{}) (*model.NewCase, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalONewCase2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewCase(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalONewUsecase2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUsecase(ctx context.Context, v interface{}) (model.NewUsecase, error) {
+	return ec.unmarshalInputNewUsecase(ctx, v)
+}
+
+func (ec *executionContext) unmarshalONewUsecase2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUsecase(ctx context.Context, v interface{}) ([]*model.NewUsecase, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.NewUsecase, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalONewUsecase2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUsecase(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalONewUsecase2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUsecase(ctx context.Context, v interface{}) (*model.NewUsecase, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalONewUsecase2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUsecase(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
 	return graphql.UnmarshalString(v)
 }
@@ -3990,29 +4024,6 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 		return graphql.Null
 	}
 	return ec.marshalOString2string(ctx, sel, *v)
-}
-
-func (ec *executionContext) unmarshalOTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
-	return graphql.UnmarshalTime(v)
-}
-
-func (ec *executionContext) marshalOTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
-	return graphql.MarshalTime(v)
-}
-
-func (ec *executionContext) unmarshalOTime2ᚖtimeᚐTime(ctx context.Context, v interface{}) (*time.Time, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOTime2timeᚐTime(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOTime2ᚖtimeᚐTime(ctx context.Context, sel ast.SelectionSet, v *time.Time) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec.marshalOTime2timeᚐTime(ctx, sel, *v)
 }
 
 func (ec *executionContext) marshalOUsecase2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUsecase(ctx context.Context, sel ast.SelectionSet, v model.Usecase) graphql.Marshaler {

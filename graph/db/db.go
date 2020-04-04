@@ -42,9 +42,7 @@ func createSchema(db *pg.DB) error {
     for _, model := range []interface{}{(*model.User)(nil) ,
         (*model.Usecase)(nil), (*model.Case)(nil)} {
         err := db.CreateTable(model, &orm.CreateTableOptions{
-            IfNotExists:   true,
-            Temp:          false,
-            FKConstraints: true,
+    IfNotExists:true,
         })
         if err != nil {
             panic(err)

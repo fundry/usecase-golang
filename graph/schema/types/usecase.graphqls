@@ -5,20 +5,17 @@ type Usecase  {
     content: String
     tags: [String]
     completed: Boolean
-    createdAt : Time
-    updateAt : Time
+    createdAt : Time!
+    updatedAt : Time!
 
     cases: [Case]
 }
 
 input NewUsecase {
-    id: Int!
     title: String!
     author: String!
     content: String
     tags: String
     completed: Boolean
-    createdAt : Time
-    updateAt : Time
 }
 

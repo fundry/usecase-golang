@@ -5,7 +5,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 	"time"
 
@@ -27,8 +26,9 @@ func (r *mutationResolver) CreateCase(ctx context.Context, input model.NewCase) 
 
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
 	user := model.User{
-		Name:  input.Name,
-		Email: input.Email,
+		Name:      input.Name,
+		Email:     input.Email,
+		CreatedAt: time.Now(),
 	}
 
 	if err := r.DB.Insert(&user); err != nil {
@@ -39,7 +39,17 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 }
 
 func (r *mutationResolver) CreateUsecase(ctx context.Context, input model.NewUsecase) (*model.Usecase, error) {
-	panic(fmt.Errorf("not implemented"))
+	usecase := model.Usecase{
+		ID:        rand.Int(),
+		Title:     input.Title,
+		Author:    input.Author,
+		Content:   input.Content,
+		Completed: input.Completed,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	return &usecase, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

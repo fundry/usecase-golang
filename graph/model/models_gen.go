@@ -15,39 +15,35 @@ type Case struct {
 }
 
 type NewCase struct {
-	ID     int    `json:"id"`
 	Name   string `json:"name"`
 	Author string `json:"author"`
 }
 
 type NewUsecase struct {
-	ID        int        `json:"id"`
-	Title     string     `json:"title"`
-	Author    string     `json:"author"`
-	Content   *string    `json:"content"`
-	Tags      *string    `json:"tags"`
-	Completed *bool      `json:"completed"`
-	CreatedAt *time.Time `json:"createdAt"`
-	UpdateAt  *time.Time `json:"updateAt"`
+	Title     string  `json:"title"`
+	Author    string  `json:"author"`
+	Content   *string `json:"content"`
+	Tags      *string `json:"tags"`
+	Completed *bool   `json:"completed"`
 }
 
 type NewUser struct {
-	ID        int        `json:"id"`
-	Name      string     `json:"name"`
-	Email     *string    `json:"email"`
-	CreatedAt *time.Time `json:"createdAt"`
+	Name     string        `json:"name"`
+	Email    *string       `json:"email"`
+	Cases    *NewCase      `json:"cases"`
+	Usecases []*NewUsecase `json:"usecases"`
 }
 
 type Usecase struct {
-	ID        int        `json:"id"`
-	Title     string     `json:"title"`
-	Author    string     `json:"author"`
-	Content   *string    `json:"content"`
-	Tags      []*string  `json:"tags"`
-	Completed *bool      `json:"completed"`
-	CreatedAt *time.Time `json:"createdAt"`
-	UpdateAt  *time.Time `json:"updateAt"`
-	Cases     []*Case    `json:"cases"`
+	ID        int       `json:"id"`
+	Title     string    `json:"title"`
+	Author    string    `json:"author"`
+	Content   *string   `json:"content"`
+	Tags      []*string `json:"tags"`
+	Completed *bool     `json:"completed"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+	Cases     []*Case   `json:"cases"`
 }
 
 type User struct {
@@ -56,5 +52,5 @@ type User struct {
 	Email     *string    `json:"email"`
 	Cases     []*Case    `json:"cases"`
 	Usecase   []*Usecase `json:"usecase"`
-	CreatedAt *time.Time `json:"createdAt"`
+	CreatedAt time.Time  `json:"createdAt"`
 }
