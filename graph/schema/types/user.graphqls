@@ -2,6 +2,8 @@ type User {
     id: Int!
     name: String!
     email: String
+    bokmarkedCases : [Case]
+    bokmarkedUsecases : [Usecase]
     cases: [Case]
     usecase: [Usecase]
     createdAt : Time!
@@ -10,7 +12,9 @@ type User {
 input NewUser {
     name: String!
     email: String
-    cases: NewCase
+    cases: [NewCase]
     usecases: [NewUsecase]
+    bokmarkedCases : [NewCase]
+    bokmarkedUsecases : [NewUsecase]
 }
 

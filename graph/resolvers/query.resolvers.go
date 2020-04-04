@@ -13,10 +13,20 @@ import (
 )
 
 func (r *queryResolver) User(ctx context.Context, id int) ([]*model.User, error) {
+	user := model.User{ID: id}
+	if err := r.DB.Select(&user); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *queryResolver) Users(ctx context.Context) (*model.User, error) {
+	 var users  []*model.User
+
+	if err := r.DB.Model(&users).Select(); err != nil {
+		log.Println(err)
+	}
+
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -55,8 +65,8 @@ func (r *queryResolver) Cases(ctx context.Context) ([]*model.Case, error) {
 
 	if err := r.DB.Model(&cases).Select(); err != nil {
 		return nil, err
-	}else {
-		log.Println(err , "something else")
+	} else {
+		log.Println(err, "something else")
 	}
 
 	return cases, nil

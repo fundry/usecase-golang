@@ -38,6 +38,7 @@ type Config struct {
 type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
+	User() UserResolver
 }
 
 type DirectiveRoot struct {
@@ -101,6 +102,10 @@ type QueryResolver interface {
 	Usecases(ctx context.Context) ([]*model.Usecase, error)
 	Case(ctx context.Context, id int) (*model.Case, error)
 	Cases(ctx context.Context) ([]*model.Case, error)
+}
+type UserResolver interface {
+	Cases(ctx context.Context, obj *model.User) ([]*model.Case, error)
+	Usecase(ctx context.Context, obj *model.User) ([]*model.Usecase, error)
 }
 
 type executableSchema struct {
@@ -444,6 +449,8 @@ directive @goField(forceResolver: Boolean, name: String) on INPUT_FIELD_DEFINITI
 
 # resolves to time.Time
 scalar Time
+
+scalar UUID
 
 # resolves to map[string]interface{}
 scalar Map
@@ -1628,13 +1635,13 @@ func (ec *executionContext) _User_cases(ctx context.Context, field graphql.Colle
 		Object:   "User",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Cases, nil
+		return ec.resolvers.User().Cases(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1659,13 +1666,13 @@ func (ec *executionContext) _User_usecase(ctx context.Context, field graphql.Col
 		Object:   "User",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Usecase, nil
+		return ec.resolvers.User().Usecase(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3137,23 +3144,41 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 		case "id":
 			out.Values[i] = ec._User_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._User_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "email":
 			out.Values[i] = ec._User_email(ctx, field, obj)
 		case "cases":
-			out.Values[i] = ec._User_cases(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_cases(ctx, field, obj)
+				return res
+			})
 		case "usecase":
-			out.Values[i] = ec._User_usecase(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_usecase(ctx, field, obj)
+				return res
+			})
 		case "createdAt":
 			out.Values[i] = ec._User_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))

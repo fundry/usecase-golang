@@ -1,8 +1,5 @@
 package resolvers
 
-// This file will be automatically regenerated based on the schema, any resolver implementations
-// will be copied through when generating and any unknown code will be moved to the end.
-
 import (
 	"context"
 	"math/rand"
@@ -12,6 +9,8 @@ import (
 	"github.com/vickywane/usecase-server/graph/model"
 )
 
+// TODO = Implement a check on data coming in. E.g length & validity of data
+
 func (r *mutationResolver) CreateCase(ctx context.Context, input model.NewCase) (*model.Case, error) {
 	cases := model.Case{
 		ID:        rand.Int(),
@@ -19,6 +18,10 @@ func (r *mutationResolver) CreateCase(ctx context.Context, input model.NewCase) 
 		Author:    input.Author,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
+	}
+
+	if err := r.DB.Insert(&cases); err != nil {
+		return nil, err
 	}
 
 	return &cases, nil
@@ -49,6 +52,9 @@ func (r *mutationResolver) CreateUsecase(ctx context.Context, input model.NewUse
 		UpdatedAt: time.Now(),
 	}
 
+	if err := r.DB.Insert(&usecase); err != nil {
+		return nil, err
+	}
 	return &usecase, nil
 }
 

@@ -55,3 +55,13 @@ models:
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
+  User:
+    fields:
+      cases:
+        resolver: true
+      usecase:
+        resolver: true
+      bookmarkedCases:
+        resolver: true
+      bookmarkedUsecase:
+        resolver: true

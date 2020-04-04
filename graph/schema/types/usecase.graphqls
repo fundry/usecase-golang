@@ -7,7 +7,7 @@ type Usecase  {
     completed: Boolean
     createdAt : Time!
     updatedAt : Time!
-
+    bookmarked: Boolean
     cases: [Case]
 }
 
@@ -16,6 +16,7 @@ input NewUsecase {
     author: String!
     content: String
     tags: String
+    bookmarked: Boolean
     completed: Boolean
 }
 
