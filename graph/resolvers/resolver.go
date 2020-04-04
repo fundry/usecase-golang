@@ -1,7 +1,15 @@
 package resolvers
 
-// This file will not be regenerated automatically.
-//
-// It serves as dependency injection for your app, add any dependencies you require here.
+import (
+     "github.com/go-pg/pg/v9"
 
-type Resolver struct{}
+     "github.com/vickywane/usecase-server/graph/model"
+)
+
+type Resolver struct{
+     DB *pg.DB
+
+     users []*model.User
+     cases []*model.Case
+     usecases []*model.Usecase
+}

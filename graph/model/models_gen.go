@@ -7,23 +7,21 @@ import (
 )
 
 type Case struct {
-	ID        string     `json:"id"`
-	Name      string     `json:"name"`
-	Author    *string    `json:"author"`
-	CreatedAt *time.Time `json:"createdAt"`
-	UpdateAt  *time.Time `json:"updateAt"`
+	ID        int       `json:"id"`
+	Name      string    `json:"name"`
+	Author    string    `json:"author"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 type NewCase struct {
-	ID        string     `json:"id"`
-	Name      string     `json:"name"`
-	Author    *string    `json:"author"`
-	CreatedAt *time.Time `json:"createdAt"`
-	UpdateAt  *time.Time `json:"updateAt"`
+	ID     int    `json:"id"`
+	Name   string `json:"name"`
+	Author string `json:"author"`
 }
 
 type NewUsecase struct {
-	ID        string     `json:"id"`
+	ID        int        `json:"id"`
 	Title     string     `json:"title"`
 	Author    string     `json:"author"`
 	Content   *string    `json:"content"`
@@ -34,14 +32,14 @@ type NewUsecase struct {
 }
 
 type NewUser struct {
-	ID        string     `json:"id"`
+	ID        int        `json:"id"`
 	Name      string     `json:"name"`
 	Email     *string    `json:"email"`
 	CreatedAt *time.Time `json:"createdAt"`
 }
 
 type Usecase struct {
-	ID        string     `json:"id"`
+	ID        int        `json:"id"`
 	Title     string     `json:"title"`
 	Author    string     `json:"author"`
 	Content   *string    `json:"content"`
@@ -53,7 +51,7 @@ type Usecase struct {
 }
 
 type User struct {
-	ID        string     `json:"id"`
+	ID        int        `json:"id"`
 	Name      string     `json:"name"`
 	Email     *string    `json:"email"`
 	Cases     []*Case    `json:"cases"`

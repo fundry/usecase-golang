@@ -1,15 +1,15 @@
-type Case@goModel(model:  "github.com/vickywane/usecase-server/graph/model.Case")
+type Case
 {
-    id: ID!
+    id: Int!
     name : String!
-    author : String
+    author : String!
 
     createdAt : Time!
-    updateAt : Time
+    updatedAt : Time!
 }
 
-input NewCase@goModel(model:  "github.com/vickywane/usecase-server/graph/model.NewCase") {
-    id: String!
+input NewCase  {
+    id: Int!
     name : String!
-    author : String
+    author : String!
 }

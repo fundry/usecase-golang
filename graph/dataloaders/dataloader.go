@@ -8,6 +8,7 @@ import (
 
 // The following are context keys which will be referenced for various loaders
 const UserLoader = "userLoader"
+const UsecaseLoader = "usecaseLoader"
 
 func setLoader(db *pg.DB, dataloader func(db *pg.DB, w http.ResponseWriter, r *http.Request, next http.Handler)) func(handler http.Handler) http.Handler {
     return func(next http.Handler) http.Handler {
@@ -20,6 +21,7 @@ func setLoader(db *pg.DB, dataloader func(db *pg.DB, w http.ResponseWriter, r *h
 func NewMiddleware(session *pg.DB) []func(handler http.Handler) http.Handler {
     return []func(handler http.Handler) http.Handler{
         setLoader(session, User),
+        setLoader(session, Usecase),
     }
 }
 

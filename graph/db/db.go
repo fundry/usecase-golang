@@ -48,6 +48,8 @@ func createSchema(db *pg.DB) error {
         })
         if err != nil {
             panic(err)
+        } else {
+            log.Println(err)
         }
     }
     return nil

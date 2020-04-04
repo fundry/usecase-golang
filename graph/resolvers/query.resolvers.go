@@ -11,11 +11,11 @@ import (
 	"github.com/vickywane/usecase-server/graph/model"
 )
 
-func (r *queryResolver) Users(ctx context.Context, id int) (*model.User, error) {
+func (r *queryResolver) User(ctx context.Context, id int) ([]*model.User, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *queryResolver) User(ctx context.Context) ([]*model.User, error) {
+func (r *queryResolver) Users(ctx context.Context) (*model.User, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -28,11 +28,24 @@ func (r *queryResolver) Usecases(ctx context.Context) ([]*model.Usecase, error) 
 }
 
 func (r *queryResolver) Case(ctx context.Context, id int) (*model.Case, error) {
-	panic(fmt.Errorf("not implemented"))
+	// case is a reserved word in GoLang
+	// causes a name conflict
+	casea := model.Case{ID: id}
+
+	if err := r.DB.Select(&casea); err != nil {
+		return nil, err
+	}
+
+	return &casea, nil
 }
 
 func (r *queryResolver) Cases(ctx context.Context) ([]*model.Case, error) {
-	panic(fmt.Errorf("not implemented"))
+	var cases []*model.Case
+
+	if err := r.DB.Model(&cases).Select(); err != nil {
+		return nil, err
+	}
+	return cases, nil
 }
 
 // Query returns generated.QueryResolver implementation.

@@ -1,6 +1,6 @@
 type Query {
-  users(id : Int!): User
-  user: [User]
+  user(id : Int!): [User]
+  users: User
 
   usecase(id : Int!): Usecase
   usecases: [Usecase]!

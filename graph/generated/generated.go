@@ -49,7 +49,7 @@ type ComplexityRoot struct {
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
 		Name      func(childComplexity int) int
-		UpdateAt  func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -63,8 +63,8 @@ type ComplexityRoot struct {
 		Cases    func(childComplexity int) int
 		Usecase  func(childComplexity int, id int) int
 		Usecases func(childComplexity int) int
-		User     func(childComplexity int) int
-		Users    func(childComplexity int, id int) int
+		User     func(childComplexity int, id int) int
+		Users    func(childComplexity int) int
 	}
 
 	Usecase struct {
@@ -95,8 +95,8 @@ type MutationResolver interface {
 	CreateUsecase(ctx context.Context, input model.NewUsecase) (*model.Usecase, error)
 }
 type QueryResolver interface {
-	Users(ctx context.Context, id int) (*model.User, error)
-	User(ctx context.Context) ([]*model.User, error)
+	User(ctx context.Context, id int) ([]*model.User, error)
+	Users(ctx context.Context) (*model.User, error)
 	Usecase(ctx context.Context, id int) (*model.Usecase, error)
 	Usecases(ctx context.Context) ([]*model.Usecase, error)
 	Case(ctx context.Context, id int) (*model.Case, error)
@@ -146,12 +146,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Case.Name(childComplexity), true
 
-	case "Case.updateAt":
-		if e.complexity.Case.UpdateAt == nil {
+	case "Case.updatedAt":
+		if e.complexity.Case.UpdatedAt == nil {
 			break
 		}
 
-		return e.complexity.Case.UpdateAt(childComplexity), true
+		return e.complexity.Case.UpdatedAt(childComplexity), true
 
 	case "Mutation.createCase":
 		if e.complexity.Mutation.CreateCase == nil {
@@ -232,19 +232,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.User(childComplexity), true
+		args, err := ec.field_Query_user_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.User(childComplexity, args["id"].(int)), true
 
 	case "Query.users":
 		if e.complexity.Query.Users == nil {
 			break
 		}
 
-		args, err := ec.field_Query_users_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Users(childComplexity, args["id"].(int)), true
+		return e.complexity.Query.Users(childComplexity), true
 
 	case "Usecase.author":
 		if e.complexity.Usecase.Author == nil {
@@ -430,8 +430,8 @@ directive @goField(forceResolver: Boolean, name: String) on INPUT_FIELD_DEFINITI
    createUsecase(input: NewUsecase!): Usecase!
 }`, BuiltIn: false},
 	&ast.Source{Name: "graph/schema/query.graphqls", Input: `type Query {
-  users(id : Int!): User
-  user: [User]
+  user(id : Int!): [User]
+  users: User
 
   usecase(id : Int!): Usecase
   usecases: [Usecase]!
@@ -456,24 +456,22 @@ scalar Upload
 `, BuiltIn: false},
 	&ast.Source{Name: "graph/schema/types/case.graphqls", Input: `type Case
 {
-    id: ID!
+    id: Int!
     name : String!
-    author : String
+    author : String!
 
-    createdAt : Time
-    updateAt : Time
+    createdAt : Time!
+    updatedAt : Time!
 }
 
-input NewCase {
-    id: String!
+input NewCase  {
+    id: Int!
     name : String!
-    author : String
-    createdAt : Time
-    updateAt : Time
+    author : String!
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "graph/schema/types/usecase.graphqls", Input: `type Usecase{
-    id: ID!
+	&ast.Source{Name: "graph/schema/types/usecase.graphqls", Input: `type Usecase  {
+    id: Int!
     title: String!
     author: String!
     content: String
@@ -486,7 +484,7 @@ input NewCase {
 }
 
 input NewUsecase {
-    id: String!
+    id: Int!
     title: String!
     author: String!
     content: String
@@ -497,8 +495,8 @@ input NewUsecase {
 }
 
 `, BuiltIn: false},
-	&ast.Source{Name: "graph/schema/types/user.graphqls", Input: `type User{
-    id: ID!
+	&ast.Source{Name: "graph/schema/types/user.graphqls", Input: `type User {
+    id: Int!
     name: String!
     email: String
     cases: [Case]
@@ -507,7 +505,7 @@ input NewUsecase {
 }
 
 input NewUser {
-    id: String!
+    id: Int!
     name: String!
     email: String
     createdAt : Time
@@ -605,7 +603,7 @@ func (ec *executionContext) field_Query_usecase_args(ctx context.Context, rawArg
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 int
@@ -684,9 +682,9 @@ func (ec *executionContext) _Case_id(ctx context.Context, field graphql.Collecte
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Case_name(ctx context.Context, field graphql.CollectedField, obj *model.Case) (ret graphql.Marshaler) {
@@ -747,11 +745,14 @@ func (ec *executionContext) _Case_author(ctx context.Context, field graphql.Coll
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Case_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Case) (ret graphql.Marshaler) {
@@ -778,14 +779,17 @@ func (ec *executionContext) _Case_createdAt(ctx context.Context, field graphql.C
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*time.Time)
+	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Case_updateAt(ctx context.Context, field graphql.CollectedField, obj *model.Case) (ret graphql.Marshaler) {
+func (ec *executionContext) _Case_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Case) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -802,18 +806,21 @@ func (ec *executionContext) _Case_updateAt(ctx context.Context, field graphql.Co
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.UpdateAt, nil
+		return obj.UpdatedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*time.Time)
+	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createCase(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -939,44 +946,6 @@ func (ec *executionContext) _Mutation_createUsecase(ctx context.Context, field g
 	return ec.marshalNUsecase2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUsecase(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_users(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_users_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Users(rctx, args["id"].(int))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.User)
-	fc.Result = res
-	return ec.marshalOUser2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -992,9 +961,16 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_user_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().User(rctx)
+		return ec.resolvers.Query().User(rctx, args["id"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1006,6 +982,37 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 	res := resTmp.([]*model.User)
 	fc.Result = res
 	return ec.marshalOUser2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_users(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Users(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalOUser2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_usecase(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1250,9 +1257,9 @@ func (ec *executionContext) _Usecase_id(ctx context.Context, field graphql.Colle
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Usecase_title(ctx context.Context, field graphql.CollectedField, obj *model.Usecase) (ret graphql.Marshaler) {
@@ -1538,9 +1545,9 @@ func (ec *executionContext) _User_id(ctx context.Context, field graphql.Collecte
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _User_name(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
@@ -2764,7 +2771,7 @@ func (ec *executionContext) unmarshalInputNewCase(ctx context.Context, obj inter
 		switch k {
 		case "id":
 			var err error
-			it.ID, err = ec.unmarshalNString2string(ctx, v)
+			it.ID, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2776,19 +2783,7 @@ func (ec *executionContext) unmarshalInputNewCase(ctx context.Context, obj inter
 			}
 		case "author":
 			var err error
-			it.Author, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "createdAt":
-			var err error
-			it.CreatedAt, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "updateAt":
-			var err error
-			it.UpdateAt, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			it.Author, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2806,7 +2801,7 @@ func (ec *executionContext) unmarshalInputNewUsecase(ctx context.Context, obj in
 		switch k {
 		case "id":
 			var err error
-			it.ID, err = ec.unmarshalNString2string(ctx, v)
+			it.ID, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2866,7 +2861,7 @@ func (ec *executionContext) unmarshalInputNewUser(ctx context.Context, obj inter
 		switch k {
 		case "id":
 			var err error
-			it.ID, err = ec.unmarshalNString2string(ctx, v)
+			it.ID, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2925,10 +2920,19 @@ func (ec *executionContext) _Case(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "author":
 			out.Values[i] = ec._Case_author(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "createdAt":
 			out.Values[i] = ec._Case_createdAt(ctx, field, obj)
-		case "updateAt":
-			out.Values[i] = ec._Case_updateAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._Case_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2996,17 +3000,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "users":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_users(ctx, field)
-				return res
-			})
 		case "user":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -3016,6 +3009,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_user(ctx, field)
+				return res
+			})
+		case "users":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_users(ctx, field)
 				return res
 			})
 		case "usecase":
@@ -3482,20 +3486,6 @@ func (ec *executionContext) marshalNCase2ᚖgithubᚗcomᚋvickywaneᚋusecase�
 	return ec._Case(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalID(v)
-}
-
-func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	res := graphql.MarshalID(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
 	return graphql.UnmarshalInt(v)
 }
@@ -3528,6 +3518,20 @@ func (ec *executionContext) unmarshalNString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	res := graphql.MarshalString(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
+	return graphql.UnmarshalTime(v)
+}
+
+func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
+	res := graphql.MarshalTime(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
