@@ -17,17 +17,21 @@ import (
 	"github.com/vickywane/usecase-server/graph/resolvers"
 )
 
-const defaultPort = "4040"
 
 //Todo Implement Auth
 
 func main() {
+	 defaultPort := "4040"
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort
 	}
 
 	Database := db.Connect()
+
+	Database.AddQueryHook(db.Logs{})
+
 	route := chi.NewRouter()
 
 	route.Route("/graphql", func(route chi.Router){

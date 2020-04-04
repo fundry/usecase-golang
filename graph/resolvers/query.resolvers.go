@@ -55,7 +55,10 @@ func (r *queryResolver) Cases(ctx context.Context) ([]*model.Case, error) {
 
 	if err := r.DB.Model(&cases).Select(); err != nil {
 		return nil, err
+	}else {
+		log.Println(err , "something else")
 	}
+
 	return cases, nil
 }
 
