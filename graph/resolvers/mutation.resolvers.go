@@ -1,5 +1,8 @@
 package resolvers
 
+// This file will be automatically regenerated based on the schema, any resolver implementations
+// will be copied through when generating and any unknown code will be moved to the end.
+
 import (
 	"context"
 	"math/rand"
@@ -8,8 +11,6 @@ import (
 	"github.com/vickywane/usecase-server/graph/generated"
 	"github.com/vickywane/usecase-server/graph/model"
 )
-
-// TODO = Implement a check on data coming in. E.g length & validity of data
 
 func (r *mutationResolver) CreateCase(ctx context.Context, input model.NewCase) (*model.Case, error) {
 	cases := model.Case{

@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -42,15 +43,19 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	Default func(ctx context.Context, obj interface{}, next graphql.Resolver, value *bool) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
 	Case struct {
-		Author    func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Name      func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
+		Author        func(childComplexity int) int
+		Bookmarked    func(childComplexity int) int
+		Collaborators func(childComplexity int) int
+		CreatedAt     func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Integrations  func(childComplexity int) int
+		Name          func(childComplexity int) int
+		UpdatedAt     func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -69,24 +74,29 @@ type ComplexityRoot struct {
 	}
 
 	Usecase struct {
-		Author    func(childComplexity int) int
-		Cases     func(childComplexity int) int
-		Completed func(childComplexity int) int
-		Content   func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Tags      func(childComplexity int) int
-		Title     func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
+		Author        func(childComplexity int) int
+		Bookmarked    func(childComplexity int) int
+		Cases         func(childComplexity int) int
+		Collaborators func(childComplexity int) int
+		Completed     func(childComplexity int) int
+		Content       func(childComplexity int) int
+		CreatedAt     func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Tags          func(childComplexity int) int
+		Title         func(childComplexity int) int
+		UpdatedAt     func(childComplexity int) int
 	}
 
 	User struct {
-		Cases     func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		Email     func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Name      func(childComplexity int) int
-		Usecase   func(childComplexity int) int
+		BokmarkedCases    func(childComplexity int) int
+		BokmarkedUsecases func(childComplexity int) int
+		Cases             func(childComplexity int) int
+		CreatedAt         func(childComplexity int) int
+		Email             func(childComplexity int) int
+		ID                func(childComplexity int) int
+		IsOrganization    func(childComplexity int) int
+		Name              func(childComplexity int) int
+		Usecase           func(childComplexity int) int
 	}
 }
 
@@ -130,6 +140,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Case.Author(childComplexity), true
 
+	case "Case.bookmarked":
+		if e.complexity.Case.Bookmarked == nil {
+			break
+		}
+
+		return e.complexity.Case.Bookmarked(childComplexity), true
+
+	case "Case.collaborators":
+		if e.complexity.Case.Collaborators == nil {
+			break
+		}
+
+		return e.complexity.Case.Collaborators(childComplexity), true
+
 	case "Case.createdAt":
 		if e.complexity.Case.CreatedAt == nil {
 			break
@@ -143,6 +167,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Case.ID(childComplexity), true
+
+	case "Case.integrations":
+		if e.complexity.Case.Integrations == nil {
+			break
+		}
+
+		return e.complexity.Case.Integrations(childComplexity), true
 
 	case "Case.name":
 		if e.complexity.Case.Name == nil {
@@ -258,12 +289,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Usecase.Author(childComplexity), true
 
+	case "Usecase.bookmarked":
+		if e.complexity.Usecase.Bookmarked == nil {
+			break
+		}
+
+		return e.complexity.Usecase.Bookmarked(childComplexity), true
+
 	case "Usecase.cases":
 		if e.complexity.Usecase.Cases == nil {
 			break
 		}
 
 		return e.complexity.Usecase.Cases(childComplexity), true
+
+	case "Usecase.collaborators":
+		if e.complexity.Usecase.Collaborators == nil {
+			break
+		}
+
+		return e.complexity.Usecase.Collaborators(childComplexity), true
 
 	case "Usecase.completed":
 		if e.complexity.Usecase.Completed == nil {
@@ -314,6 +359,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Usecase.UpdatedAt(childComplexity), true
 
+	case "User.bokmarkedCases":
+		if e.complexity.User.BokmarkedCases == nil {
+			break
+		}
+
+		return e.complexity.User.BokmarkedCases(childComplexity), true
+
+	case "User.bokmarkedUsecases":
+		if e.complexity.User.BokmarkedUsecases == nil {
+			break
+		}
+
+		return e.complexity.User.BokmarkedUsecases(childComplexity), true
+
 	case "User.cases":
 		if e.complexity.User.Cases == nil {
 			break
@@ -341,6 +400,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.ID(childComplexity), true
+
+	case "User.isOrganization":
+		if e.complexity.User.IsOrganization == nil {
+			break
+		}
+
+		return e.complexity.User.IsOrganization(childComplexity), true
 
 	case "User.name":
 		if e.complexity.User.Name == nil {
@@ -428,7 +494,14 @@ var sources = []*ast.Source{
     | UNION
 
 directive @goField(forceResolver: Boolean, name: String) on INPUT_FIELD_DEFINITION
-    | FIELD_DEFINITION`, BuiltIn: false},
+    | FIELD_DEFINITION
+
+directive @default(value: Boolean ) on FIELD_DEFINITION
+    | INPUT_OBJECT
+    | SCALAR
+    | ENUM
+    | INTERFACE
+    | UNION`, BuiltIn: false},
 	&ast.Source{Name: "graph/schema/mutation.graphqls", Input: `type Mutation {
    createCase(input: NewCase!): Case!
    createUser(input: NewUser!): User!
@@ -466,7 +539,9 @@ scalar Upload
     id: Int!
     name : String!
     author : String!
-
+    bookmarked: Boolean @default(value : false)
+    integrations : [String]
+    collaborators: [String]
     createdAt : Time!
     updatedAt : Time!
 }
@@ -474,6 +549,9 @@ scalar Upload
 input NewCase  {
     name : String!
     author : String!
+    bookmarked: Boolean
+    integrations : [String]
+    collaborators: [String]
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "graph/schema/types/usecase.graphqls", Input: `type Usecase  {
@@ -482,10 +560,11 @@ input NewCase  {
     author: String!
     content: String
     tags: [String]
-    completed: Boolean
+    completed: Boolean @default(value : false)
     createdAt : Time!
     updatedAt : Time!
-
+    collaborators: [String]
+    bookmarked: Boolean @default(value : false)
     cases: [Case]
 }
 
@@ -494,6 +573,8 @@ input NewUsecase {
     author: String!
     content: String
     tags: String
+    collaborators: [String]
+    bookmarked: Boolean
     completed: Boolean
 }
 
@@ -502,6 +583,9 @@ input NewUsecase {
     id: Int!
     name: String!
     email: String
+    isOrganization: Boolean @default(value : false)
+    bokmarkedCases : [Case]
+    bokmarkedUsecases : [Usecase]
     cases: [Case]
     usecase: [Usecase]
     createdAt : Time!
@@ -510,8 +594,11 @@ input NewUsecase {
 input NewUser {
     name: String!
     email: String
-    cases: NewCase
+    isOrganization: Boolean
+    cases: [NewCase]
     usecases: [NewUsecase]
+    bokmarkedCases : [NewCase]
+    bokmarkedUsecases : [NewUsecase]
 }
 
 `, BuiltIn: false},
@@ -521,6 +608,20 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) dir_default_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *bool
+	if tmp, ok := rawArgs["value"]; ok {
+		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["value"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_createCase_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -756,6 +857,123 @@ func (ec *executionContext) _Case_author(ctx context.Context, field graphql.Coll
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Case_bookmarked(ctx context.Context, field graphql.CollectedField, obj *model.Case) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Case",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.Bookmarked, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			value, err := ec.unmarshalOBoolean2ᚖbool(ctx, false)
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Default == nil {
+				return nil, errors.New("directive default is not implemented")
+			}
+			return ec.directives.Default(ctx, obj, directive0, value)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*bool); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *bool`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Case_integrations(ctx context.Context, field graphql.CollectedField, obj *model.Case) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Case",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Integrations, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*string)
+	fc.Result = res
+	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Case_collaborators(ctx context.Context, field graphql.CollectedField, obj *model.Case) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Case",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Collaborators, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*string)
+	fc.Result = res
+	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Case_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Case) (ret graphql.Marshaler) {
@@ -1411,8 +1629,32 @@ func (ec *executionContext) _Usecase_completed(ctx context.Context, field graphq
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Completed, nil
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.Completed, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			value, err := ec.unmarshalOBoolean2ᚖbool(ctx, false)
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Default == nil {
+				return nil, errors.New("directive default is not implemented")
+			}
+			return ec.directives.Default(ctx, obj, directive0, value)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*bool); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *bool`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1492,6 +1734,92 @@ func (ec *executionContext) _Usecase_updatedAt(ctx context.Context, field graphq
 	res := resTmp.(time.Time)
 	fc.Result = res
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Usecase_collaborators(ctx context.Context, field graphql.CollectedField, obj *model.Usecase) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Usecase",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Collaborators, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*string)
+	fc.Result = res
+	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Usecase_bookmarked(ctx context.Context, field graphql.CollectedField, obj *model.Usecase) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Usecase",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.Bookmarked, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			value, err := ec.unmarshalOBoolean2ᚖbool(ctx, false)
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Default == nil {
+				return nil, errors.New("directive default is not implemented")
+			}
+			return ec.directives.Default(ctx, obj, directive0, value)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*bool); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *bool`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Usecase_cases(ctx context.Context, field graphql.CollectedField, obj *model.Usecase) (ret graphql.Marshaler) {
@@ -1622,6 +1950,123 @@ func (ec *executionContext) _User_email(ctx context.Context, field graphql.Colle
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_isOrganization(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.IsOrganization, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			value, err := ec.unmarshalOBoolean2ᚖbool(ctx, false)
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Default == nil {
+				return nil, errors.New("directive default is not implemented")
+			}
+			return ec.directives.Default(ctx, obj, directive0, value)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*bool); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *bool`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_bokmarkedCases(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BokmarkedCases, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Case)
+	fc.Result = res
+	return ec.marshalOCase2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐCase(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_bokmarkedUsecases(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BokmarkedUsecases, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Usecase)
+	fc.Result = res
+	return ec.marshalOUsecase2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUsecase(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _User_cases(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
@@ -2793,6 +3238,24 @@ func (ec *executionContext) unmarshalInputNewCase(ctx context.Context, obj inter
 			if err != nil {
 				return it, err
 			}
+		case "bookmarked":
+			var err error
+			it.Bookmarked, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "integrations":
+			var err error
+			it.Integrations, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "collaborators":
+			var err error
+			it.Collaborators, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -2829,6 +3292,18 @@ func (ec *executionContext) unmarshalInputNewUsecase(ctx context.Context, obj in
 			if err != nil {
 				return it, err
 			}
+		case "collaborators":
+			var err error
+			it.Collaborators, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "bookmarked":
+			var err error
+			it.Bookmarked, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "completed":
 			var err error
 			it.Completed, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -2859,15 +3334,33 @@ func (ec *executionContext) unmarshalInputNewUser(ctx context.Context, obj inter
 			if err != nil {
 				return it, err
 			}
+		case "isOrganization":
+			var err error
+			it.IsOrganization, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "cases":
 			var err error
-			it.Cases, err = ec.unmarshalONewCase2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewCase(ctx, v)
+			it.Cases, err = ec.unmarshalONewCase2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewCase(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "usecases":
 			var err error
 			it.Usecases, err = ec.unmarshalONewUsecase2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUsecase(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "bokmarkedCases":
+			var err error
+			it.BokmarkedCases, err = ec.unmarshalONewCase2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewCase(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "bokmarkedUsecases":
+			var err error
+			it.BokmarkedUsecases, err = ec.unmarshalONewUsecase2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUsecase(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2911,6 +3404,12 @@ func (ec *executionContext) _Case(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "bookmarked":
+			out.Values[i] = ec._Case_bookmarked(ctx, field, obj)
+		case "integrations":
+			out.Values[i] = ec._Case_integrations(ctx, field, obj)
+		case "collaborators":
+			out.Values[i] = ec._Case_collaborators(ctx, field, obj)
 		case "createdAt":
 			out.Values[i] = ec._Case_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -3117,6 +3616,10 @@ func (ec *executionContext) _Usecase(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "collaborators":
+			out.Values[i] = ec._Usecase_collaborators(ctx, field, obj)
+		case "bookmarked":
+			out.Values[i] = ec._Usecase_bookmarked(ctx, field, obj)
 		case "cases":
 			out.Values[i] = ec._Usecase_cases(ctx, field, obj)
 		default:
@@ -3153,6 +3656,12 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "email":
 			out.Values[i] = ec._User_email(ctx, field, obj)
+		case "isOrganization":
+			out.Values[i] = ec._User_isOrganization(ctx, field, obj)
+		case "bokmarkedCases":
+			out.Values[i] = ec._User_bokmarkedCases(ctx, field, obj)
+		case "bokmarkedUsecases":
+			out.Values[i] = ec._User_bokmarkedUsecases(ctx, field, obj)
 		case "cases":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -3922,6 +4431,26 @@ func (ec *executionContext) marshalOCase2ᚖgithubᚗcomᚋvickywaneᚋusecase�
 
 func (ec *executionContext) unmarshalONewCase2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewCase(ctx context.Context, v interface{}) (model.NewCase, error) {
 	return ec.unmarshalInputNewCase(ctx, v)
+}
+
+func (ec *executionContext) unmarshalONewCase2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewCase(ctx context.Context, v interface{}) ([]*model.NewCase, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.NewCase, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalONewCase2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewCase(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalONewCase2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewCase(ctx context.Context, v interface{}) (*model.NewCase, error) {

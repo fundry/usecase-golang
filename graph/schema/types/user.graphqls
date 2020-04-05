@@ -2,6 +2,7 @@ type User {
     id: Int!
     name: String!
     email: String
+    isOrganization: Boolean @default(value : false)
     bokmarkedCases : [Case]
     bokmarkedUsecases : [Usecase]
     cases: [Case]
@@ -12,6 +13,7 @@ type User {
 input NewUser {
     name: String!
     email: String
+    isOrganization: Boolean
     cases: [NewCase]
     usecases: [NewUsecase]
     bokmarkedCases : [NewCase]

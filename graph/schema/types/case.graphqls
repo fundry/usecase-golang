@@ -3,7 +3,9 @@ type Case
     id: Int!
     name : String!
     author : String!
-    bookmarked: Boolean
+    bookmarked: Boolean @default(value : false)
+    integrations : [String]
+    collaborators: [String]
     createdAt : Time!
     updatedAt : Time!
 }
@@ -12,4 +14,6 @@ input NewCase  {
     name : String!
     author : String!
     bookmarked: Boolean
+    integrations : [String]
+    collaborators: [String]
 }

@@ -7,50 +7,66 @@ import (
 )
 
 type Case struct {
-	ID        int       `json:"id"`
-	Name      string    `json:"name"`
-	Author    string    `json:"author"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID            int       `json:"id"`
+	Name          string    `json:"name"`
+	Author        string    `json:"author"`
+	Bookmarked    *bool     `json:"bookmarked"`
+	Integrations  []*string `json:"integrations"`
+	Collaborators []*string `json:"collaborators"`
+	CreatedAt     time.Time `json:"createdAt"`
+	UpdatedAt     time.Time `json:"updatedAt"`
 }
 
 type NewCase struct {
-	Name   string `json:"name"`
-	Author string `json:"author"`
+	Name          string    `json:"name"`
+	Author        string    `json:"author"`
+	Bookmarked    *bool     `json:"bookmarked"`
+	Integrations  []*string `json:"integrations"`
+	Collaborators []*string `json:"collaborators"`
 }
 
 type NewUsecase struct {
-	Title     string  `json:"title"`
-	Author    string  `json:"author"`
-	Content   *string `json:"content"`
-	Tags      *string `json:"tags"`
-	Completed *bool   `json:"completed"`
+	Title         string    `json:"title"`
+	Author        string    `json:"author"`
+	Content       *string   `json:"content"`
+	Tags          *string   `json:"tags"`
+	Collaborators []*string `json:"collaborators"`
+	Bookmarked    *bool     `json:"bookmarked"`
+	Completed     *bool     `json:"completed"`
 }
 
 type NewUser struct {
-	Name     string        `json:"name"`
-	Email    *string       `json:"email"`
-	Cases    *NewCase      `json:"cases"`
-	Usecases []*NewUsecase `json:"usecases"`
+	Name              string        `json:"name"`
+	Email             *string       `json:"email"`
+	IsOrganization    *bool         `json:"isOrganization"`
+	Cases             []*NewCase    `json:"cases"`
+	Usecases          []*NewUsecase `json:"usecases"`
+	BokmarkedCases    []*NewCase    `json:"bokmarkedCases"`
+	BokmarkedUsecases []*NewUsecase `json:"bokmarkedUsecases"`
 }
 
 type Usecase struct {
-	ID        int       `json:"id"`
-	Title     string    `json:"title"`
-	Author    string    `json:"author"`
-	Content   *string   `json:"content"`
-	Tags      []*string `json:"tags"`
-	Completed *bool     `json:"completed"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-	Cases     []*Case   `json:"cases"`
+	ID            int       `json:"id"`
+	Title         string    `json:"title"`
+	Author        string    `json:"author"`
+	Content       *string   `json:"content"`
+	Tags          []*string `json:"tags"`
+	Completed     *bool     `json:"completed"`
+	CreatedAt     time.Time `json:"createdAt"`
+	UpdatedAt     time.Time `json:"updatedAt"`
+	Collaborators []*string `json:"collaborators"`
+	Bookmarked    *bool     `json:"bookmarked"`
+	Cases         []*Case   `json:"cases"`
 }
 
 type User struct {
-	ID        int        `json:"id"`
-	Name      string     `json:"name"`
-	Email     *string    `json:"email"`
-	Cases     []*Case    `json:"cases"`
-	Usecase   []*Usecase `json:"usecase"`
-	CreatedAt time.Time  `json:"createdAt"`
+	ID                int        `json:"id"`
+	Name              string     `json:"name"`
+	Email             *string    `json:"email"`
+	IsOrganization    *bool      `json:"isOrganization"`
+	BokmarkedCases    []*Case    `json:"bokmarkedCases"`
+	BokmarkedUsecases []*Usecase `json:"bokmarkedUsecases"`
+	Cases             []*Case    `json:"cases"`
+	Usecase           []*Usecase `json:"usecase"`
+	CreatedAt         time.Time  `json:"createdAt"`
 }

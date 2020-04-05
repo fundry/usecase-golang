@@ -21,7 +21,7 @@ func (r *queryResolver) User(ctx context.Context, id int) ([]*model.User, error)
 }
 
 func (r *queryResolver) Users(ctx context.Context) (*model.User, error) {
-	 var users  []*model.User
+	var users []*model.User
 
 	if err := r.DB.Model(&users).Select(); err != nil {
 		log.Println(err)
