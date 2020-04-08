@@ -7,4 +7,7 @@ type Query {
 
   case(id : Int!): Case
   cases: [Case]!
+
+  jote(id: Int!) : Jotter!
+  jotters(usecase : String!) : Jotter!
 }

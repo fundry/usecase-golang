@@ -9,10 +9,11 @@ import (
     "github.com/vickywane/usecase-server/graph/model"
 )
 
+//Todo : Use & Load env vars here
 
 func createSchema(db *pg.DB) error {
     for _, models := range []interface{}{(*model.User)(nil) ,
-        (*model.Usecase)(nil), (*model.Case)(nil)} {
+        (*model.Usecase)(nil), (*model.Case)(nil), (*model.Jotter)(nil)} {
         err := db.CreateTable(models, &orm.CreateTableOptions{
             IfNotExists:true,
         })
@@ -39,7 +40,6 @@ func Connect()  *pg.DB {
 
     if db != nil {
         fmt.Println(db)
-        // log.Fatalf("Unable to connect to db", db)
     }
 
     err := createSchema(db)

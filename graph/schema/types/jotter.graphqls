@@ -1,0 +1,18 @@
+type Jotter  {
+    id : Int!
+    index: Int!
+    name : String!
+    content : String!
+    contributors  : [String!]
+    completed : Boolean! @default(value: false)
+    usecase : String!
+}
+
+input NewJotter {
+    index: Int!
+    name : String!
+    content : String!
+    contributors  : [String!]
+    usecase : String!
+    completed: Boolean
+}

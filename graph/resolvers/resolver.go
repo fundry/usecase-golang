@@ -12,4 +12,5 @@ type Resolver struct{
      users []*model.User
      cases []*model.Case
      usecases []*model.Usecase
+     jotter []*model.Jotter
 }

@@ -58,8 +58,19 @@ type ComplexityRoot struct {
 		UpdatedAt     func(childComplexity int) int
 	}
 
+	Jotter struct {
+		Completed    func(childComplexity int) int
+		Content      func(childComplexity int) int
+		Contributors func(childComplexity int) int
+		ID           func(childComplexity int) int
+		Index        func(childComplexity int) int
+		Name         func(childComplexity int) int
+		Usecase      func(childComplexity int) int
+	}
+
 	Mutation struct {
 		CreateCase    func(childComplexity int, input model.NewCase) int
+		CreateJotter  func(childComplexity int, input model.NewJotter) int
 		CreateUsecase func(childComplexity int, input model.NewUsecase) int
 		CreateUser    func(childComplexity int, input model.NewUser) int
 	}
@@ -67,6 +78,8 @@ type ComplexityRoot struct {
 	Query struct {
 		Case     func(childComplexity int, id int) int
 		Cases    func(childComplexity int) int
+		Jote     func(childComplexity int, id int) int
+		Jotters  func(childComplexity int, usecase string) int
 		Usecase  func(childComplexity int, id int) int
 		Usecases func(childComplexity int) int
 		User     func(childComplexity int, id int) int
@@ -104,6 +117,7 @@ type MutationResolver interface {
 	CreateCase(ctx context.Context, input model.NewCase) (*model.Case, error)
 	CreateUser(ctx context.Context, input model.NewUser) (*model.User, error)
 	CreateUsecase(ctx context.Context, input model.NewUsecase) (*model.Usecase, error)
+	CreateJotter(ctx context.Context, input model.NewJotter) (*model.Jotter, error)
 }
 type QueryResolver interface {
 	User(ctx context.Context, id int) ([]*model.User, error)
@@ -112,6 +126,8 @@ type QueryResolver interface {
 	Usecases(ctx context.Context) ([]*model.Usecase, error)
 	Case(ctx context.Context, id int) (*model.Case, error)
 	Cases(ctx context.Context) ([]*model.Case, error)
+	Jote(ctx context.Context, id int) (*model.Jotter, error)
+	Jotters(ctx context.Context, usecase string) (*model.Jotter, error)
 }
 type UserResolver interface {
 	Cases(ctx context.Context, obj *model.User) ([]*model.Case, error)
@@ -189,6 +205,55 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Case.UpdatedAt(childComplexity), true
 
+	case "Jotter.completed":
+		if e.complexity.Jotter.Completed == nil {
+			break
+		}
+
+		return e.complexity.Jotter.Completed(childComplexity), true
+
+	case "Jotter.content":
+		if e.complexity.Jotter.Content == nil {
+			break
+		}
+
+		return e.complexity.Jotter.Content(childComplexity), true
+
+	case "Jotter.contributors":
+		if e.complexity.Jotter.Contributors == nil {
+			break
+		}
+
+		return e.complexity.Jotter.Contributors(childComplexity), true
+
+	case "Jotter.id":
+		if e.complexity.Jotter.ID == nil {
+			break
+		}
+
+		return e.complexity.Jotter.ID(childComplexity), true
+
+	case "Jotter.index":
+		if e.complexity.Jotter.Index == nil {
+			break
+		}
+
+		return e.complexity.Jotter.Index(childComplexity), true
+
+	case "Jotter.name":
+		if e.complexity.Jotter.Name == nil {
+			break
+		}
+
+		return e.complexity.Jotter.Name(childComplexity), true
+
+	case "Jotter.usecase":
+		if e.complexity.Jotter.Usecase == nil {
+			break
+		}
+
+		return e.complexity.Jotter.Usecase(childComplexity), true
+
 	case "Mutation.createCase":
 		if e.complexity.Mutation.CreateCase == nil {
 			break
@@ -200,6 +265,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateCase(childComplexity, args["input"].(model.NewCase)), true
+
+	case "Mutation.createJotter":
+		if e.complexity.Mutation.CreateJotter == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createJotter_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateJotter(childComplexity, args["input"].(model.NewJotter)), true
 
 	case "Mutation.createUsecase":
 		if e.complexity.Mutation.CreateUsecase == nil {
@@ -243,6 +320,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Cases(childComplexity), true
+
+	case "Query.jote":
+		if e.complexity.Query.Jote == nil {
+			break
+		}
+
+		args, err := ec.field_Query_jote_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Jote(childComplexity, args["id"].(int)), true
+
+	case "Query.jotters":
+		if e.complexity.Query.Jotters == nil {
+			break
+		}
+
+		args, err := ec.field_Query_jotters_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Jotters(childComplexity, args["usecase"].(string)), true
 
 	case "Query.usecase":
 		if e.complexity.Query.Usecase == nil {
@@ -506,6 +607,7 @@ directive @default(value: Boolean ) on FIELD_DEFINITION
    createCase(input: NewCase!): Case!
    createUser(input: NewUser!): User!
    createUsecase(input: NewUsecase!): Usecase!
+   createJotter(input: NewJotter!): Jotter!
 }`, BuiltIn: false},
 	&ast.Source{Name: "graph/schema/query.graphqls", Input: `type Query {
   user(id : Int!): [User]
@@ -516,6 +618,9 @@ directive @default(value: Boolean ) on FIELD_DEFINITION
 
   case(id : Int!): Case
   cases: [Case]!
+
+  jote(id: Int!) : Jotter!
+  jotters(usecase : String!) : Jotter!
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "graph/schema/scalar.graphqls", Input: `# My custom defined types https://github.com/99designs/gqlgen/blob/master/docs/content/reference/scalars.md
@@ -554,6 +659,24 @@ input NewCase  {
     collaborators: [String]
 }
 `, BuiltIn: false},
+	&ast.Source{Name: "graph/schema/types/jotter.graphqls", Input: `type Jotter  {
+    id : Int!
+    index: Int!
+    name : String!
+    content : String!
+    contributors  : [String!]
+    completed : Boolean! @default(value: false)
+    usecase : String!
+}
+
+input NewJotter {
+    index: Int!
+    name : String!
+    content : String!
+    contributors  : [String!]
+    usecase : String!
+    completed: Boolean
+}`, BuiltIn: false},
 	&ast.Source{Name: "graph/schema/types/usecase.graphqls", Input: `type Usecase  {
     id: Int!
     title: String!
@@ -637,6 +760,20 @@ func (ec *executionContext) field_Mutation_createCase_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createJotter_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.NewJotter
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalNNewJotter2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewJotter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createUsecase_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -690,6 +827,34 @@ func (ec *executionContext) field_Query_case_args(ctx context.Context, rawArgs m
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_jote_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_jotters_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["usecase"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["usecase"] = arg0
 	return args, nil
 }
 
@@ -1044,6 +1209,265 @@ func (ec *executionContext) _Case_updatedAt(ctx context.Context, field graphql.C
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Jotter_id(ctx context.Context, field graphql.CollectedField, obj *model.Jotter) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Jotter",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Jotter_index(ctx context.Context, field graphql.CollectedField, obj *model.Jotter) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Jotter",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Index, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Jotter_name(ctx context.Context, field graphql.CollectedField, obj *model.Jotter) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Jotter",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Jotter_content(ctx context.Context, field graphql.CollectedField, obj *model.Jotter) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Jotter",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Content, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Jotter_contributors(ctx context.Context, field graphql.CollectedField, obj *model.Jotter) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Jotter",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Contributors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Jotter_completed(ctx context.Context, field graphql.CollectedField, obj *model.Jotter) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Jotter",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.Completed, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			value, err := ec.unmarshalOBoolean2ᚖbool(ctx, false)
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Default == nil {
+				return nil, errors.New("directive default is not implemented")
+			}
+			return ec.directives.Default(ctx, obj, directive0, value)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(bool); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be bool`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Jotter_usecase(ctx context.Context, field graphql.CollectedField, obj *model.Jotter) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Jotter",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Usecase, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_createCase(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1165,6 +1589,47 @@ func (ec *executionContext) _Mutation_createUsecase(ctx context.Context, field g
 	res := resTmp.(*model.Usecase)
 	fc.Result = res
 	return ec.marshalNUsecase2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUsecase(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_createJotter(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_createJotter_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateJotter(rctx, args["input"].(model.NewJotter))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Jotter)
+	fc.Result = res
+	return ec.marshalNJotter2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐJotter(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1378,6 +1843,88 @@ func (ec *executionContext) _Query_cases(ctx context.Context, field graphql.Coll
 	res := resTmp.([]*model.Case)
 	fc.Result = res
 	return ec.marshalNCase2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐCase(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_jote(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_jote_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Jote(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Jotter)
+	fc.Result = res
+	return ec.marshalNJotter2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐJotter(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_jotters(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_jotters_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Jotters(rctx, args["usecase"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Jotter)
+	fc.Result = res
+	return ec.marshalNJotter2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐJotter(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3262,6 +3809,54 @@ func (ec *executionContext) unmarshalInputNewCase(ctx context.Context, obj inter
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputNewJotter(ctx context.Context, obj interface{}) (model.NewJotter, error) {
+	var it model.NewJotter
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "index":
+			var err error
+			it.Index, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "content":
+			var err error
+			it.Content, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "contributors":
+			var err error
+			it.Contributors, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "usecase":
+			var err error
+			it.Usecase, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "completed":
+			var err error
+			it.Completed, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputNewUsecase(ctx context.Context, obj interface{}) (model.NewUsecase, error) {
 	var it model.NewUsecase
 	var asMap = obj.(map[string]interface{})
@@ -3431,6 +4026,60 @@ func (ec *executionContext) _Case(ctx context.Context, sel ast.SelectionSet, obj
 	return out
 }
 
+var jotterImplementors = []string{"Jotter"}
+
+func (ec *executionContext) _Jotter(ctx context.Context, sel ast.SelectionSet, obj *model.Jotter) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, jotterImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Jotter")
+		case "id":
+			out.Values[i] = ec._Jotter_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "index":
+			out.Values[i] = ec._Jotter_index(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._Jotter_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "content":
+			out.Values[i] = ec._Jotter_content(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "contributors":
+			out.Values[i] = ec._Jotter_contributors(ctx, field, obj)
+		case "completed":
+			out.Values[i] = ec._Jotter_completed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "usecase":
+			out.Values[i] = ec._Jotter_usecase(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -3458,6 +4107,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "createUsecase":
 			out.Values[i] = ec._Mutation_createUsecase(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "createJotter":
+			out.Values[i] = ec._Mutation_createJotter(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -3554,6 +4208,34 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_cases(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "jote":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_jote(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "jotters":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_jotters(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -4024,8 +4706,26 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
+func (ec *executionContext) marshalNJotter2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐJotter(ctx context.Context, sel ast.SelectionSet, v model.Jotter) graphql.Marshaler {
+	return ec._Jotter(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNJotter2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐJotter(ctx context.Context, sel ast.SelectionSet, v *model.Jotter) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Jotter(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNNewCase2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewCase(ctx context.Context, v interface{}) (model.NewCase, error) {
 	return ec.unmarshalInputNewCase(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNNewJotter2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewJotter(ctx context.Context, v interface{}) (model.NewJotter, error) {
+	return ec.unmarshalInputNewJotter(ctx, v)
 }
 
 func (ec *executionContext) unmarshalNNewUsecase2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUsecase(ctx context.Context, v interface{}) (model.NewUsecase, error) {

@@ -59,6 +59,24 @@ func (r *mutationResolver) CreateUsecase(ctx context.Context, input model.NewUse
 	return &usecase, nil
 }
 
+func (r *mutationResolver) CreateJotter(ctx context.Context, input model.NewJotter) (*model.Jotter, error) {
+	jotter := model.Jotter{
+		ID:           rand.Int(),
+		Index:        input.Index,
+		Name:         input.Name,
+		Content:      input.Content,
+		Contributors: input.Contributors,
+		Completed:    false,
+		Usecase:      input.Usecase,
+	}
+
+	if err := r.DB.Insert(&jotter); err != nil {
+		return nil, err
+	}
+
+	return &jotter, nil
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 

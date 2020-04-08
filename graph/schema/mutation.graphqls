@@ -2,4 +2,5 @@ type Mutation {
    createCase(input: NewCase!): Case!
    createUser(input: NewUser!): User!
    createUsecase(input: NewUsecase!): Usecase!
+   createJotter(input: NewJotter!): Jotter!
 }

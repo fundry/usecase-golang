@@ -17,12 +17,31 @@ type Case struct {
 	UpdatedAt     time.Time `json:"updatedAt"`
 }
 
+type Jotter struct {
+	ID           int      `json:"id"`
+	Index        int      `json:"index"`
+	Name         string   `json:"name"`
+	Content      string   `json:"content"`
+	Contributors []string `json:"contributors"`
+	Completed    bool     `json:"completed"`
+	Usecase      string   `json:"usecase"`
+}
+
 type NewCase struct {
 	Name          string    `json:"name"`
 	Author        string    `json:"author"`
 	Bookmarked    *bool     `json:"bookmarked"`
 	Integrations  []*string `json:"integrations"`
 	Collaborators []*string `json:"collaborators"`
+}
+
+type NewJotter struct {
+	Index        int      `json:"index"`
+	Name         string   `json:"name"`
+	Content      string   `json:"content"`
+	Contributors []string `json:"contributors"`
+	Usecase      string   `json:"usecase"`
+	Completed    *bool    `json:"completed"`
 }
 
 type NewUsecase struct {

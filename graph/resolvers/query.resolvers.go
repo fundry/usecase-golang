@@ -72,6 +72,26 @@ func (r *queryResolver) Cases(ctx context.Context) ([]*model.Case, error) {
 	return cases, nil
 }
 
+func (r *queryResolver) Jote(ctx context.Context, id int) (*model.Jotter, error) {
+	jotter := model.Jotter{ID: id}
+
+	if err := r.DB.Select(&jotter); err != nil {
+		return nil, err
+	}
+
+	return &jotter, nil
+}
+
+func (r *queryResolver) Jotters(ctx context.Context, usecase string) (*model.Jotter, error) {
+	jotters := model.Jotter{Usecase: usecase}
+
+	if err := r.DB.Select(&jotters); err != nil {
+		return nil, err
+	}
+
+	return &jotters, nil
+}
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
