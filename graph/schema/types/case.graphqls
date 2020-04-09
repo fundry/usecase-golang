@@ -1,5 +1,4 @@
-type Case
-{
+type Case {
     id: Int!
     name : String!
     author : String!
@@ -13,6 +12,13 @@ type Case
 input NewCase  {
     name : String!
     author : String!
+    bookmarked: Boolean
+    integrations : [String]
+    collaborators: [String]
+}
+
+input UpdateCase {
+    name : String!
     bookmarked: Boolean
     integrations : [String]
     collaborators: [String]

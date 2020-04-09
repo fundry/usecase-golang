@@ -2,6 +2,7 @@ type User {
     id: Int!
     name: String!
     email: String
+    password : String!
     isOrganization: Boolean! @default(value : false)
     bokmarkedCases : [Case]
     bokmarkedUsecases : [Usecase]
@@ -14,9 +15,19 @@ input NewUser {
     name: String!
     email: String
     isOrganization: Boolean
+    password: String!
     cases: [NewCase]
     usecases: [NewUsecase]
     bokmarkedCases : [NewCase]
     bokmarkedUsecases : [NewUsecase]
 }
 
+input UpdateUser {
+    email: String
+    isOrganization: Boolean
+    password: String!
+    cases: [NewCase]
+    usecases: [NewUsecase]
+    bokmarkedCases : [NewCase]
+    bokmarkedUsecases : [NewUsecase]
+}

@@ -17,3 +17,9 @@ input NewJotter {
     contributors  : [String!]
     usecase : String!
 }
+
+input UpdateJotter {
+    name : String!
+    content : String!
+    contributors  : [String!]
+}

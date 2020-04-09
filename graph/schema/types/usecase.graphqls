@@ -22,3 +22,11 @@ input NewUsecase {
     completed: Boolean
 }
 
+input  UpdateUsecase {
+    title: String!
+    content: String
+    tags: String
+    collaborators: [String]
+    bookmarked: Boolean
+    completed: Boolean
+}
