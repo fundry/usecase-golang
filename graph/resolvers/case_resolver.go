@@ -3,6 +3,8 @@ package resolvers
 import (
     "context"
     "log"
+    "math/rand"
+    "time"
 
     "github.com/vickywane/usecase-server/graph/model"
 )
@@ -29,3 +31,21 @@ func (r *queryResolver) Cases(ctx context.Context) ([]*model.Case, error) {
 
     return cases, nil
 }
+
+func (r *mutationResolver) CreateCase(ctx context.Context, input model.NewCase) (*model.Case, error) {
+    cases := model.Case{
+        ID:         rand.Int(),
+        Name:       input.Name,
+        Author:     input.Author,
+        CreatedAt:  time.Now(),
+        UpdatedAt:  time.Now(),
+        Bookmarked: false,
+    }
+
+    if err := r.DB.Insert(&cases); err != nil {
+        return nil, err
+    }
+
+    return &cases, nil
+}
+

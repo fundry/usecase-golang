@@ -4,6 +4,8 @@ import (
     "context"
     "errors"
     "fmt"
+    "math/rand"
+    "time"
 
     "github.com/vickywane/usecase-server/graph/model"
 )
@@ -41,4 +43,24 @@ func (r *queryResolver) AllJotters(ctx context.Context) ([]*model.Jotter, error)
     }
 
     return jotters, nil
+}
+
+func (r *mutationResolver) CreateJotter(ctx context.Context, input model.NewJotter) (*model.Jotter, error) {
+    jotter := model.Jotter{
+        ID:           rand.Int(),
+        Index:        input.Index,
+        Name:         input.Name,
+        Content:      input.Content,
+        Contributors: input.Contributors,
+        Completed:    false,
+        Usecase:      input.Usecase,
+        CreatedAt:    time.Now(),
+        UpdatedAt:    time.Now(),
+    }
+
+    if err := r.DB.Insert(&jotter); err != nil {
+        return nil, err
+    }
+
+    return &jotter, nil
 }

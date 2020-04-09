@@ -3,6 +3,8 @@ package resolvers
 import (
     "context"
     "log"
+    "math/rand"
+    "time"
 
     "github.com/vickywane/usecase-server/graph/model"
 )
@@ -24,4 +26,22 @@ func (r *queryResolver) Usecases(ctx context.Context) ([]*model.Usecase, error) 
         log.Println(err)
     }
     return usecases, nil
+}
+
+func (r *mutationResolver) CreateUsecase(ctx context.Context, input model.NewUsecase) (*model.Usecase, error) {
+    usecase := model.Usecase{
+        ID:         rand.Int(),
+        Title:      input.Title,
+        Author:     input.Author,
+        Content:    input.Content,
+        Completed:  false,
+        CreatedAt:  time.Now(),
+        UpdatedAt:  time.Now(),
+        Bookmarked: false,
+    }
+
+    if err := r.DB.Insert(&usecase); err != nil {
+        return nil, err
+    }
+    return &usecase, nil
 }

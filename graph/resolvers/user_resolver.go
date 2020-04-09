@@ -3,6 +3,8 @@ package resolvers
 import (
     "context"
     "fmt"
+    "math/rand"
+    "time"
 
     "github.com/vickywane/usecase-server/graph/model"
 )
@@ -26,3 +28,18 @@ func (r *queryResolver) Users(ctx context.Context) (*model.User, error) {
     panic(fmt.Errorf("not implemented"))
 }
 
+func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
+    user := model.User{
+        ID:             rand.Int(),
+        Name:           input.Name,
+        Email:          input.Email,
+        CreatedAt:      time.Now(),
+        IsOrganization: false,
+    }
+
+    if err := r.DB.Insert(&user); err != nil {
+        return nil, err
+    }
+
+    return &user, nil
+}
