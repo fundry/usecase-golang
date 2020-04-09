@@ -2,6 +2,7 @@ package resolvers
 
 import (
     "context"
+    "fmt"
     "log"
     "math/rand"
     "time"
@@ -39,13 +40,17 @@ func (r *mutationResolver) CreateCase(ctx context.Context, input model.NewCase) 
         Author:     input.Author,
         CreatedAt:  time.Now(),
         UpdatedAt:  time.Now(),
-        Bookmarked: false,
-    }
+Bookmarked: false,
+}
 
     if err := r.DB.Insert(&cases); err != nil {
         return nil, err
     }
 
     return &cases, nil
+}
+
+func (r *mutationResolver) UpdateCase(ctx context.Context, input model.UpdateCase) (*model.Case, error) {
+     panic(fmt.Errorf("not implemeented"))
 }
 

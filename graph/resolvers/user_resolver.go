@@ -43,3 +43,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 
     return &user, nil
 }
+
+func (r *mutationResolver) UpdateUser(ctx context.Context, input model.UpdateUser) (*model.User, error) {
+    panic(fmt.Errorf("not implemeented"))
+}

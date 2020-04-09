@@ -2,6 +2,7 @@ package resolvers
 
 import (
     "context"
+    "fmt"
     "log"
     "math/rand"
     "time"
@@ -44,4 +45,8 @@ func (r *mutationResolver) CreateUsecase(ctx context.Context, input model.NewUse
         return nil, err
     }
     return &usecase, nil
+}
+
+func (r *mutationResolver) UpdateUsecase(ctx context.Context, input model.UpdateUsecase) (*model.Usecase, error) {
+    panic(fmt.Errorf("not implemeented"))
 }

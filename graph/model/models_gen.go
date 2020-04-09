@@ -68,6 +68,7 @@ type NewUser struct {
 	Name              string        `json:"name"`
 	Email             *string       `json:"email"`
 	IsOrganization    *bool         `json:"isOrganization"`
+	Password          string        `json:"password"`
 	Cases             []*NewCase    `json:"cases"`
 	Usecases          []*NewUsecase `json:"usecases"`
 	BokmarkedCases    []*NewCase    `json:"bokmarkedCases"`
@@ -84,6 +85,46 @@ type Organization struct {
 	Cases     []*string `json:"cases"`
 	Usecases  []*string `json:"usecases"`
 	Members   []*string `json:"members"`
+}
+
+type UpdateCase struct {
+	Name          string    `json:"name"`
+	Bookmarked    *bool     `json:"bookmarked"`
+	Integrations  []*string `json:"integrations"`
+	Collaborators []*string `json:"collaborators"`
+}
+
+type UpdateJotter struct {
+	Name         string   `json:"name"`
+	Content      string   `json:"content"`
+	Contributors []string `json:"contributors"`
+}
+
+type UpdateOrganization struct {
+	Name     string    `json:"name"`
+	Email    string    `json:"email"`
+	Cases    []*string `json:"cases"`
+	Usecases []*string `json:"usecases"`
+	Members  []*string `json:"members"`
+}
+
+type UpdateUsecase struct {
+	Title         string    `json:"title"`
+	Content       *string   `json:"content"`
+	Tags          *string   `json:"tags"`
+	Collaborators []*string `json:"collaborators"`
+	Bookmarked    *bool     `json:"bookmarked"`
+	Completed     *bool     `json:"completed"`
+}
+
+type UpdateUser struct {
+	Email             *string       `json:"email"`
+	IsOrganization    *bool         `json:"isOrganization"`
+	Password          string        `json:"password"`
+	Cases             []*NewCase    `json:"cases"`
+	Usecases          []*NewUsecase `json:"usecases"`
+	BokmarkedCases    []*NewCase    `json:"bokmarkedCases"`
+	BokmarkedUsecases []*NewUsecase `json:"bokmarkedUsecases"`
 }
 
 type Usecase struct {
@@ -104,6 +145,7 @@ type User struct {
 	ID                int        `json:"id"`
 	Name              string     `json:"name"`
 	Email             *string    `json:"email"`
+	Password          string     `json:"password"`
 	IsOrganization    bool       `json:"isOrganization"`
 	BokmarkedCases    []*Case    `json:"bokmarkedCases"`
 	BokmarkedUsecases []*Usecase `json:"bokmarkedUsecases"`
