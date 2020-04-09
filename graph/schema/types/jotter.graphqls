@@ -1,11 +1,13 @@
 type Jotter  {
     id : Int!
+    usecase : String!
     index: Int!
     name : String!
     content : String!
     contributors  : [String!]
     completed : Boolean! @default(value: false)
-    usecase : String!
+    createdAt : Time!
+    updatedAt : Time!
 }
 
 input NewJotter {
@@ -14,5 +16,4 @@ input NewJotter {
     content : String!
     contributors  : [String!]
     usecase : String!
-    completed: Boolean
 }

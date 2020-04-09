@@ -1,13 +1,17 @@
 type Query {
   user(id : Int!): [User]
-  users: User
+  users: User!
 
-  usecase(id : Int!): Usecase
+  usecase(id : Int!): Usecase!
   usecases: [Usecase]!
 
-  case(id : Int!): Case
+  case(id : Int!): Case!
   cases: [Case]!
 
-  jote(id: Int!) : Jotter!
+  jotter(id: Int!) : Jotter!
   jotters(usecase : String!) : Jotter!
+  allJotters : [Jotter]!
+
+  organization(id : Int!): Organization!
+  organizations: [Organization]!
 }

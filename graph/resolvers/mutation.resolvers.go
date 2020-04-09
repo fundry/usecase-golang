@@ -5,6 +5,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -14,11 +15,12 @@ import (
 
 func (r *mutationResolver) CreateCase(ctx context.Context, input model.NewCase) (*model.Case, error) {
 	cases := model.Case{
-		ID:        rand.Int(),
-		Name:      input.Name,
-		Author:    input.Author,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		ID:         rand.Int(),
+		Name:       input.Name,
+		Author:     input.Author,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+		Bookmarked: false,
 	}
 
 	if err := r.DB.Insert(&cases); err != nil {
@@ -30,9 +32,10 @@ func (r *mutationResolver) CreateCase(ctx context.Context, input model.NewCase) 
 
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
 	user := model.User{
-		Name:      input.Name,
-		Email:     input.Email,
-		CreatedAt: time.Now(),
+		Name:           input.Name,
+		Email:          input.Email,
+		CreatedAt:      time.Now(),
+		IsOrganization: false,
 	}
 
 	if err := r.DB.Insert(&user); err != nil {
@@ -44,13 +47,14 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 
 func (r *mutationResolver) CreateUsecase(ctx context.Context, input model.NewUsecase) (*model.Usecase, error) {
 	usecase := model.Usecase{
-		ID:        rand.Int(),
-		Title:     input.Title,
-		Author:    input.Author,
-		Content:   input.Content,
-		Completed: input.Completed,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		ID:         rand.Int(),
+		Title:      input.Title,
+		Author:     input.Author,
+		Content:    input.Content,
+		Completed:  false,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+		Bookmarked: false,
 	}
 
 	if err := r.DB.Insert(&usecase); err != nil {
@@ -68,6 +72,8 @@ func (r *mutationResolver) CreateJotter(ctx context.Context, input model.NewJott
 		Contributors: input.Contributors,
 		Completed:    false,
 		Usecase:      input.Usecase,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
 
 	if err := r.DB.Insert(&jotter); err != nil {
@@ -75,6 +81,10 @@ func (r *mutationResolver) CreateJotter(ctx context.Context, input model.NewJott
 	}
 
 	return &jotter, nil
+}
+
+func (r *mutationResolver) CreateOrganization(ctx context.Context, input model.NewOrganization) (*model.Organization, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 // Mutation returns generated.MutationResolver implementation.

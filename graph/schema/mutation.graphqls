@@ -3,4 +3,5 @@ type Mutation {
    createUser(input: NewUser!): User!
    createUsecase(input: NewUsecase!): Usecase!
    createJotter(input: NewJotter!): Jotter!
+   createOrganization(input : NewOrganization!) : Organization!
 }

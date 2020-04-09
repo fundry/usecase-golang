@@ -34,7 +34,7 @@ func Connect()  *pg.DB {
         User:                  "postgres",
         Password:              "postgres",
         Addr:                   "localhost:5432",
-        Database:              "usecase-go",
+        Database:              "usecase-database",
         ApplicationName:        "Usecase-server" ,
     })
 

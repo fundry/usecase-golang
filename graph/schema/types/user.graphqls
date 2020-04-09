@@ -2,7 +2,7 @@ type User {
     id: Int!
     name: String!
     email: String
-    isOrganization: Boolean @default(value : false)
+    isOrganization: Boolean! @default(value : false)
     bokmarkedCases : [Case]
     bokmarkedUsecases : [Usecase]
     cases: [Case]

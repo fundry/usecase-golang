@@ -1,0 +1,20 @@
+type Organization {
+    id : ID!
+    name : String!
+    email: String!
+    createdBy : String!
+    createdAt: Time!
+    updatedAt: Time!
+    cases :  [String]
+    usecases : [String]
+    members : [String]
+}
+
+input NewOrganization {
+    name : String!
+    email: String!
+    cases: [String]
+    usecases: [String]
+    createdBy : String!
+    members : [String]
+}
