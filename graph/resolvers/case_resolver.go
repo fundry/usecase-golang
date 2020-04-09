@@ -1,0 +1,31 @@
+package resolvers
+
+import (
+    "context"
+    "log"
+
+    "github.com/vickywane/usecase-server/graph/model"
+)
+
+func (r *queryResolver) Case(ctx context.Context, id int) (*model.Case, error) {
+    // ====> !!Case is a reserved word in GoLang
+    casea := model.Case{ID: id}
+
+    if err := r.DB.Select(&casea); err != nil {
+        return nil, err
+    }
+
+    return &casea, nil
+}
+
+func (r *queryResolver) Cases(ctx context.Context) ([]*model.Case, error) {
+    var cases []*model.Case
+
+    if err := r.DB.Model(&cases).Select(); err != nil {
+        return nil, err
+    } else {
+        log.Println(err, "something else")
+    }
+
+    return cases, nil
+}

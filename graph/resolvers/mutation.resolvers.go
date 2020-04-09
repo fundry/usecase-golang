@@ -5,7 +5,7 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"math/rand"
 	"time"
 
@@ -84,7 +84,23 @@ func (r *mutationResolver) CreateJotter(ctx context.Context, input model.NewJott
 }
 
 func (r *mutationResolver) CreateOrganization(ctx context.Context, input model.NewOrganization) (*model.Organization, error) {
-	panic(fmt.Errorf("not implemented"))
+	organization := model.Organization{
+		ID:        rand.Int(),
+		Name:      input.Name,
+		Email:     input.Email,
+		CreatedBy: input.CreatedBy,
+		CreatedAt: time.Time{},
+		UpdatedAt: time.Time{},
+		Cases:     nil,
+		Usecases:  nil,
+		Members:   nil,
+	}
+
+	if err := r.DB.Insert(&organization); err != nil {
+		log.Println(err)
+	}
+
+	return &organization, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

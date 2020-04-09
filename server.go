@@ -11,14 +11,14 @@ import (
 
 	"github.com/go-chi/chi"
 
+	"github.com/vickywane/usecase-server/graph/middlewares"
 	"github.com/vickywane/usecase-server/graph/dataloaders"
 	"github.com/vickywane/usecase-server/graph/db"
 	"github.com/vickywane/usecase-server/graph/generated"
 	"github.com/vickywane/usecase-server/graph/resolvers"
 )
 
-
-//Todo Implement Auth
+//Todo Implement Auth --in progress
 
 func main() {
 	 defaultPort := "4040"
@@ -33,6 +33,8 @@ func main() {
 	Database.AddQueryHook(db.Logs{})
 
 	route := chi.NewRouter()
+
+	route.Use(middlewares.AuthMiddleware())
 
 	route.Route("/graphql", func(route chi.Router){
 		route.Use(dataloaders.NewMiddleware(Database)...)

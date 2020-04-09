@@ -13,7 +13,8 @@ import (
 
 func createSchema(db *pg.DB) error {
     for _, models := range []interface{}{(*model.User)(nil) ,
-        (*model.Usecase)(nil), (*model.Case)(nil), (*model.Jotter)(nil)} {
+        (*model.Usecase)(nil), (*model.Case)(nil), (*model.Jotter)(nil),
+        (*model.Organization)(nil) } {
         err := db.CreateTable(models, &orm.CreateTableOptions{
             IfNotExists:true,
         })
