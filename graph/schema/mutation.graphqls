@@ -1,17 +1,17 @@
 type Mutation {
    createCase(input: NewCase!): Case!
-   updateCase(input: UpdateCase!): Case!
+   updateCase( id: ID!, input: UpdateCase!): Case!
 
    createUser(input: NewUser!): User!
-   updateUser(input: UpdateUser!) : User!
+   updateUser( id: ID!, input: UpdateUser!) : User!
 
    createUsecase(input: NewUsecase!): Usecase!
-   updateUsecase(input: UpdateUsecase!) :Usecase!
+   updateUsecase( id: ID!, input: UpdateUsecase!) :Usecase!
 
    createJotter(input: NewJotter!): Jotter!
-   updateJotter(input: UpdateJotter!) : Jotter!
+   updateJotter( id: ID!, input: UpdateJotter!) : Jotter!
 
    createOrganization(input : NewOrganization!) : Organization!
-   updateOrganization(input : UpdateOrganization! ) : Organization!
+   updateOrganization( id: ID!, input : UpdateOrganization! ) : Organization!
 
 }

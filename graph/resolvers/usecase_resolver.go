@@ -47,6 +47,6 @@ func (r *mutationResolver) CreateUsecase(ctx context.Context, input model.NewUse
     return &usecase, nil
 }
 
-func (r *mutationResolver) UpdateUsecase(ctx context.Context, input model.UpdateUsecase) (*model.Usecase, error) {
+func (r *mutationResolver) UpdateUsecase(ctx context.Context,  id int,  input model.UpdateUsecase) (*model.Usecase, error) {
     panic(fmt.Errorf("not implemeented"))
 }

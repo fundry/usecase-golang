@@ -65,6 +65,6 @@ func (r *mutationResolver) CreateJotter(ctx context.Context, input model.NewJott
     return &jotter, nil
 }
 
-func (r *mutationResolver) UpdateJotter(ctx context.Context, input model.UpdateJotter) (*model.Jotter, error) {
+func (r *mutationResolver) UpdateJotter(ctx context.Context,  id int, input model.UpdateJotter) (*model.Jotter, error) {
     panic(fmt.Errorf("not implemeented"))
 }

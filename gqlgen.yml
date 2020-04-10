@@ -19,6 +19,7 @@ model:
 resolver:
   layout: follow-schema
   dir: graph/resolvers
+  filename: graph/resolvers/resolvers.go
   package: resolvers
 
 # Optional: turn on use `gqlgen:"fieldName"` tags in your models

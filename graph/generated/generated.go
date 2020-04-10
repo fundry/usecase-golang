@@ -76,11 +76,11 @@ type ComplexityRoot struct {
 		CreateOrganization func(childComplexity int, input model.NewOrganization) int
 		CreateUsecase      func(childComplexity int, input model.NewUsecase) int
 		CreateUser         func(childComplexity int, input model.NewUser) int
-		UpdateCase         func(childComplexity int, input model.UpdateCase) int
-		UpdateJotter       func(childComplexity int, input model.UpdateJotter) int
-		UpdateOrganization func(childComplexity int, input model.UpdateOrganization) int
-		UpdateUsecase      func(childComplexity int, input model.UpdateUsecase) int
-		UpdateUser         func(childComplexity int, input model.UpdateUser) int
+		UpdateCase         func(childComplexity int, id int, input model.UpdateCase) int
+		UpdateJotter       func(childComplexity int, id int, input model.UpdateJotter) int
+		UpdateOrganization func(childComplexity int, id int, input model.UpdateOrganization) int
+		UpdateUsecase      func(childComplexity int, id int, input model.UpdateUsecase) int
+		UpdateUser         func(childComplexity int, id int, input model.UpdateUser) int
 	}
 
 	Organization struct {
@@ -139,15 +139,15 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	CreateCase(ctx context.Context, input model.NewCase) (*model.Case, error)
-	UpdateCase(ctx context.Context, input model.UpdateCase) (*model.Case, error)
+	UpdateCase(ctx context.Context, id int, input model.UpdateCase) (*model.Case, error)
 	CreateUser(ctx context.Context, input model.NewUser) (*model.User, error)
-	UpdateUser(ctx context.Context, input model.UpdateUser) (*model.User, error)
+	UpdateUser(ctx context.Context, id int, input model.UpdateUser) (*model.User, error)
 	CreateUsecase(ctx context.Context, input model.NewUsecase) (*model.Usecase, error)
-	UpdateUsecase(ctx context.Context, input model.UpdateUsecase) (*model.Usecase, error)
+	UpdateUsecase(ctx context.Context, id int, input model.UpdateUsecase) (*model.Usecase, error)
 	CreateJotter(ctx context.Context, input model.NewJotter) (*model.Jotter, error)
-	UpdateJotter(ctx context.Context, input model.UpdateJotter) (*model.Jotter, error)
+	UpdateJotter(ctx context.Context, id int, input model.UpdateJotter) (*model.Jotter, error)
 	CreateOrganization(ctx context.Context, input model.NewOrganization) (*model.Organization, error)
-	UpdateOrganization(ctx context.Context, input model.UpdateOrganization) (*model.Organization, error)
+	UpdateOrganization(ctx context.Context, id int, input model.UpdateOrganization) (*model.Organization, error)
 }
 type QueryResolver interface {
 	User(ctx context.Context, id int) ([]*model.User, error)
@@ -371,7 +371,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateCase(childComplexity, args["input"].(model.UpdateCase)), true
+		return e.complexity.Mutation.UpdateCase(childComplexity, args["id"].(int), args["input"].(model.UpdateCase)), true
 
 	case "Mutation.updateJotter":
 		if e.complexity.Mutation.UpdateJotter == nil {
@@ -383,7 +383,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateJotter(childComplexity, args["input"].(model.UpdateJotter)), true
+		return e.complexity.Mutation.UpdateJotter(childComplexity, args["id"].(int), args["input"].(model.UpdateJotter)), true
 
 	case "Mutation.updateOrganization":
 		if e.complexity.Mutation.UpdateOrganization == nil {
@@ -395,7 +395,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateOrganization(childComplexity, args["input"].(model.UpdateOrganization)), true
+		return e.complexity.Mutation.UpdateOrganization(childComplexity, args["id"].(int), args["input"].(model.UpdateOrganization)), true
 
 	case "Mutation.updateUsecase":
 		if e.complexity.Mutation.UpdateUsecase == nil {
@@ -407,7 +407,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateUsecase(childComplexity, args["input"].(model.UpdateUsecase)), true
+		return e.complexity.Mutation.UpdateUsecase(childComplexity, args["id"].(int), args["input"].(model.UpdateUsecase)), true
 
 	case "Mutation.updateUser":
 		if e.complexity.Mutation.UpdateUser == nil {
@@ -419,7 +419,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateUser(childComplexity, args["input"].(model.UpdateUser)), true
+		return e.complexity.Mutation.UpdateUser(childComplexity, args["id"].(int), args["input"].(model.UpdateUser)), true
 
 	case "Organization.cases":
 		if e.complexity.Organization.Cases == nil {
@@ -820,19 +820,19 @@ directive @default(value: Boolean ) on FIELD_DEFINITION
     | UNION`, BuiltIn: false},
 	&ast.Source{Name: "graph/schema/mutation.graphqls", Input: `type Mutation {
    createCase(input: NewCase!): Case!
-   updateCase(input: UpdateCase!): Case!
+   updateCase( id: ID!, input: UpdateCase!): Case!
 
    createUser(input: NewUser!): User!
-   updateUser(input: UpdateUser!) : User!
+   updateUser( id: ID!, input: UpdateUser!) : User!
 
    createUsecase(input: NewUsecase!): Usecase!
-   updateUsecase(input: UpdateUsecase!) :Usecase!
+   updateUsecase( id: ID!, input: UpdateUsecase!) :Usecase!
 
    createJotter(input: NewJotter!): Jotter!
-   updateJotter(input: UpdateJotter!) : Jotter!
+   updateJotter( id: ID!, input: UpdateJotter!) : Jotter!
 
    createOrganization(input : NewOrganization!) : Organization!
-   updateOrganization(input : UpdateOrganization! ) : Organization!
+   updateOrganization( id: ID!, input : UpdateOrganization! ) : Organization!
 
 }`, BuiltIn: false},
 	&ast.Source{Name: "graph/schema/query.graphqls", Input: `type Query {
@@ -1106,70 +1106,110 @@ func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, 
 func (ec *executionContext) field_Mutation_updateCase_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.UpdateCase
-	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalNUpdateCase2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUpdateCase(ctx, tmp)
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["input"] = arg0
+	args["id"] = arg0
+	var arg1 model.UpdateCase
+	if tmp, ok := rawArgs["input"]; ok {
+		arg1, err = ec.unmarshalNUpdateCase2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUpdateCase(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
 	return args, nil
 }
 
 func (ec *executionContext) field_Mutation_updateJotter_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.UpdateJotter
-	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalNUpdateJotter2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUpdateJotter(ctx, tmp)
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["input"] = arg0
+	args["id"] = arg0
+	var arg1 model.UpdateJotter
+	if tmp, ok := rawArgs["input"]; ok {
+		arg1, err = ec.unmarshalNUpdateJotter2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUpdateJotter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
 	return args, nil
 }
 
 func (ec *executionContext) field_Mutation_updateOrganization_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.UpdateOrganization
-	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalNUpdateOrganization2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUpdateOrganization(ctx, tmp)
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["input"] = arg0
+	args["id"] = arg0
+	var arg1 model.UpdateOrganization
+	if tmp, ok := rawArgs["input"]; ok {
+		arg1, err = ec.unmarshalNUpdateOrganization2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUpdateOrganization(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
 	return args, nil
 }
 
 func (ec *executionContext) field_Mutation_updateUsecase_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.UpdateUsecase
-	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalNUpdateUsecase2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUpdateUsecase(ctx, tmp)
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["input"] = arg0
+	args["id"] = arg0
+	var arg1 model.UpdateUsecase
+	if tmp, ok := rawArgs["input"]; ok {
+		arg1, err = ec.unmarshalNUpdateUsecase2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUpdateUsecase(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
 	return args, nil
 }
 
 func (ec *executionContext) field_Mutation_updateUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.UpdateUser
-	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalNUpdateUser2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUpdateUser(ctx, tmp)
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["input"] = arg0
+	args["id"] = arg0
+	var arg1 model.UpdateUser
+	if tmp, ok := rawArgs["input"]; ok {
+		arg1, err = ec.unmarshalNUpdateUser2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUpdateUser(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
 	return args, nil
 }
 
@@ -1989,7 +2029,7 @@ func (ec *executionContext) _Mutation_updateCase(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateCase(rctx, args["input"].(model.UpdateCase))
+		return ec.resolvers.Mutation().UpdateCase(rctx, args["id"].(int), args["input"].(model.UpdateCase))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2071,7 +2111,7 @@ func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateUser(rctx, args["input"].(model.UpdateUser))
+		return ec.resolvers.Mutation().UpdateUser(rctx, args["id"].(int), args["input"].(model.UpdateUser))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2153,7 +2193,7 @@ func (ec *executionContext) _Mutation_updateUsecase(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateUsecase(rctx, args["input"].(model.UpdateUsecase))
+		return ec.resolvers.Mutation().UpdateUsecase(rctx, args["id"].(int), args["input"].(model.UpdateUsecase))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2235,7 +2275,7 @@ func (ec *executionContext) _Mutation_updateJotter(ctx context.Context, field gr
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateJotter(rctx, args["input"].(model.UpdateJotter))
+		return ec.resolvers.Mutation().UpdateJotter(rctx, args["id"].(int), args["input"].(model.UpdateJotter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2317,7 +2357,7 @@ func (ec *executionContext) _Mutation_updateOrganization(ctx context.Context, fi
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateOrganization(rctx, args["input"].(model.UpdateOrganization))
+		return ec.resolvers.Mutation().UpdateOrganization(rctx, args["id"].(int), args["input"].(model.UpdateOrganization))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

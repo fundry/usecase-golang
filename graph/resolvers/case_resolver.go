@@ -40,8 +40,8 @@ func (r *mutationResolver) CreateCase(ctx context.Context, input model.NewCase) 
         Author:     input.Author,
         CreatedAt:  time.Now(),
         UpdatedAt:  time.Now(),
-Bookmarked: false,
-}
+        Bookmarked: false,
+    }
 
     if err := r.DB.Insert(&cases); err != nil {
         return nil, err
@@ -50,7 +50,9 @@ Bookmarked: false,
     return &cases, nil
 }
 
-func (r *mutationResolver) UpdateCase(ctx context.Context, input model.UpdateCase) (*model.Case, error) {
+func (r *mutationResolver) UpdateCase(ctx context.Context, id int, input model.UpdateCase) (*model.Case, error) {
+      // cases, err :=
+
      panic(fmt.Errorf("not implemeented"))
 }
 

@@ -4,6 +4,7 @@ import (
      "github.com/go-pg/pg/v9"
 
      "github.com/vickywane/usecase-server/graph/generated"
+     "github.com/vickywane/usecase-server/graph/model"
 )
 
 type Resolver struct{
@@ -19,3 +20,11 @@ type queryResolver struct{ *Resolver }
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
 type mutationResolver struct{ *Resolver }
+
+// custom private function
+func (r *mutationResolver) GetUserById(id int)  (*model.Case , error) {
+     cases := model.Case{}
+
+     err := r.DB.Model(&cases).Where("id = ?", id).First()
+     return &cases , err
+}

@@ -52,6 +52,6 @@ func (r *mutationResolver) CreateOrganization(ctx context.Context, input model.N
     return &organization, nil
 }
 
-func (r *mutationResolver) UpdateOrganization(ctx context.Context, input model.UpdateOrganization) (*model.Organization, error) {
+func (r *mutationResolver) UpdateOrganization(ctx context.Context,  id int, input model.UpdateOrganization) (*model.Organization, error) {
     panic(fmt.Errorf("not implemeented"))
 }
