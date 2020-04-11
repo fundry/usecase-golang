@@ -21,7 +21,7 @@ func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResol
 
 type mutationResolver struct{ *Resolver }
 
-// custom private function
+// custom public function
 func (r *mutationResolver) GetUserById(id int)  (*model.Case , error) {
      cases := model.Case{}
 

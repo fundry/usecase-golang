@@ -1,7 +1,7 @@
 type User {
     id: Int!
     name: String!
-    email: String
+    email: String!
     password : String!
     isOrganization: Boolean! @default(value : false)
     bokmarkedCases : [Case]
@@ -9,6 +9,7 @@ type User {
     cases: [Case]
     usecase: [Usecase]
     createdAt : Time!
+    updatedAt: Time!
 }
 
 input NewUser {

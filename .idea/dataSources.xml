@@ -4,10 +4,9 @@
     <data-source source="LOCAL" name="usecase-database" uuid="d64ed1a1-4a21-4b51-813a-37b9b1322515">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
-      <configured-by-url>true</configured-by-url>
       <remarks>Usecase Database</remarks>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>localhost:5432</jdbc-url>
+      <jdbc-url>jdbc:postgresql://localhost:5432/usecase-database</jdbc-url>
     </data-source>
   </component>
 </project>

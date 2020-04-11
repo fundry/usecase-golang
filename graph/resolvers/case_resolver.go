@@ -51,7 +51,7 @@ func (r *mutationResolver) CreateCase(ctx context.Context, input model.NewCase) 
 }
 
 func (r *mutationResolver) UpdateCase(ctx context.Context, id int, input model.UpdateCase) (*model.Case, error) {
-      // cases, err :=
+      // cases, err := r.
 
      panic(fmt.Errorf("not implemeented"))
 }

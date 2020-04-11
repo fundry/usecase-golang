@@ -4,17 +4,16 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/go-chi/chi"
 
 	"log"
 	"net/http"
 	"os"
 
-	"github.com/go-chi/chi"
-
-	"github.com/vickywane/usecase-server/graph/middlewares"
 	"github.com/vickywane/usecase-server/graph/dataloaders"
 	"github.com/vickywane/usecase-server/graph/db"
 	"github.com/vickywane/usecase-server/graph/generated"
+	"github.com/vickywane/usecase-server/graph/middlewares"
 	"github.com/vickywane/usecase-server/graph/resolvers"
 )
 

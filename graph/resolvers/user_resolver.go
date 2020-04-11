@@ -10,29 +10,30 @@ import (
 )
 
 
-func (r *queryResolver) User(ctx context.Context, id int) ([]*model.User, error) {
+func (r *queryResolver) User(ctx context.Context, id int) (*model.User, error) {
     user := model.User{ID: id}
     if err := r.DB.Select(&user); err != nil {
         return nil, err
     }
-    panic(fmt.Errorf("not implemented"))
+
+    return &user, nil
 }
 
-func (r *queryResolver) Users(ctx context.Context) (*model.User, error) {
+func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
     var users []*model.User
 
     if err := r.DB.Model(&users).Select(); err != nil {
         fmt.Println(err)
     }
 
-    panic(fmt.Errorf("not implemented"))
+     return users, nil
 }
 
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (*model.User, error) {
     user := model.User{
         ID:             rand.Int(),
         Name:           input.Name,
-        Email:          input.Email,
+        Email:          *input.Email,
         CreatedAt:      time.Now(),
         IsOrganization: false,
     }

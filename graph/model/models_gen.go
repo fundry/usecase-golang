@@ -144,7 +144,7 @@ type Usecase struct {
 type User struct {
 	ID                int        `json:"id"`
 	Name              string     `json:"name"`
-	Email             *string    `json:"email"`
+	Email             string     `json:"email"`
 	Password          string     `json:"password"`
 	IsOrganization    bool       `json:"isOrganization"`
 	BokmarkedCases    []*Case    `json:"bokmarkedCases"`
@@ -152,4 +152,5 @@ type User struct {
 	Cases             []*Case    `json:"cases"`
 	Usecase           []*Usecase `json:"usecase"`
 	CreatedAt         time.Time  `json:"createdAt"`
+	UpdatedAt         time.Time  `json:"updatedAt"`
 }
