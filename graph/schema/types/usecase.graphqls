@@ -1,7 +1,7 @@
 type Usecase  {
     id: Int!
     title: String!
-    author: String!
+    author: User!
     content: String
     tags: [String]
     completed: Boolean! @default(value : false)

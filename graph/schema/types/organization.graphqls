@@ -2,12 +2,12 @@ type Organization {
     id : ID!
     name : String!
     email: String!
-    createdBy : String!
+    createdBy : User!
     createdAt: Time!
     updatedAt: Time!
-    cases :  [String]
-    usecases : [String]
-    members : [String]
+    cases :  [Case]
+    usecases : [Usecase]
+    members : [User]
 }
 
 input NewOrganization {

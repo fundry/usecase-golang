@@ -5,8 +5,8 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	"github.com/rs/cors"
-
 	"log"
 	"net/http"
 	"os"
@@ -14,12 +14,12 @@ import (
 	"github.com/vickywane/usecase-server/graph/dataloaders"
 	"github.com/vickywane/usecase-server/graph/db"
 	"github.com/vickywane/usecase-server/graph/generated"
-	"github.com/vickywane/usecase-server/graph/middlewares"
+	InternalMiddleWare "github.com/vickywane/usecase-server/graph/middlewares"
 	"github.com/vickywane/usecase-server/graph/resolvers"
 )
 
 //Todo Implement Auth --in progress
-// Todo Check d difference btwn GIN & CHI for performance
+// Todo Check d & try GIN & CHI for performance
 
 func main() {
 	 defaultPort := "4040"
@@ -34,11 +34,14 @@ func main() {
 
 	route := chi.NewRouter()
 
-	route.Use(middlewares.AuthMiddleware() , cors.New(cors.Options{
-		AllowedOrigins:         []string{"http://localhost:3000/"},
+	route.Use(cors.New(cors.Options{
+		AllowedOrigins:         []string{"http://localhost:4040"},
 		AllowCredentials:       true,
 		Debug:                  true,
 	}).Handler)
+	route.Use(middleware.Logger,
+			middleware.RequestID,
+			InternalMiddleWare.AuthMiddleware())
 
 	route.Route("/graphql", func(route chi.Router){
 		route.Use(dataloaders.NewMiddleware(Database)...)

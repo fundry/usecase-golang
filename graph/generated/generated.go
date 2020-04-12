@@ -37,8 +37,12 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Case() CaseResolver
+	Jotter() JotterResolver
 	Mutation() MutationResolver
+	Organization() OrganizationResolver
 	Query() QueryResolver
+	Usecase() UsecaseResolver
 	User() UserResolver
 }
 
@@ -63,6 +67,7 @@ type ComplexityRoot struct {
 		Content      func(childComplexity int) int
 		Contributors func(childComplexity int) int
 		CreatedAt    func(childComplexity int) int
+		CreatedBy    func(childComplexity int) int
 		ID           func(childComplexity int) int
 		Index        func(childComplexity int) int
 		Name         func(childComplexity int) int
@@ -138,6 +143,18 @@ type ComplexityRoot struct {
 	}
 }
 
+type CaseResolver interface {
+	Author(ctx context.Context, obj *model.Case) (*model.Organization, error)
+
+	Collaborators(ctx context.Context, obj *model.Case) ([]*model.User, error)
+}
+type JotterResolver interface {
+	Usecase(ctx context.Context, obj *model.Jotter) ([]*model.Usecase, error)
+
+	Contributors(ctx context.Context, obj *model.Jotter) ([]*model.User, error)
+
+	CreatedBy(ctx context.Context, obj *model.Jotter) (*model.User, error)
+}
 type MutationResolver interface {
 	CreateCase(ctx context.Context, input model.NewCase) (*model.Case, error)
 	UpdateCase(ctx context.Context, id int, input model.UpdateCase) (*model.Case, error)
@@ -149,6 +166,12 @@ type MutationResolver interface {
 	UpdateJotter(ctx context.Context, id int, input model.UpdateJotter) (*model.Jotter, error)
 	CreateOrganization(ctx context.Context, input model.NewOrganization) (*model.Organization, error)
 	UpdateOrganization(ctx context.Context, id int, input model.UpdateOrganization) (*model.Organization, error)
+}
+type OrganizationResolver interface {
+	CreatedBy(ctx context.Context, obj *model.Organization) (*model.User, error)
+
+	Cases(ctx context.Context, obj *model.Organization) ([]*model.Case, error)
+	Usecases(ctx context.Context, obj *model.Organization) ([]*model.Usecase, error)
 }
 type QueryResolver interface {
 	User(ctx context.Context, id int) (*model.User, error)
@@ -162,6 +185,11 @@ type QueryResolver interface {
 	AllJotters(ctx context.Context) ([]*model.Jotter, error)
 	Organization(ctx context.Context, id int) (*model.Organization, error)
 	Organizations(ctx context.Context) ([]*model.Organization, error)
+}
+type UsecaseResolver interface {
+	Author(ctx context.Context, obj *model.Usecase) (*model.User, error)
+
+	Cases(ctx context.Context, obj *model.Usecase) ([]*model.Case, error)
 }
 type UserResolver interface {
 	Cases(ctx context.Context, obj *model.User) ([]*model.Case, error)
@@ -266,6 +294,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Jotter.CreatedAt(childComplexity), true
+
+	case "Jotter.createdBy":
+		if e.complexity.Jotter.CreatedBy == nil {
+			break
+		}
+
+		return e.complexity.Jotter.CreatedBy(childComplexity), true
 
 	case "Jotter.id":
 		if e.complexity.Jotter.ID == nil {
@@ -880,37 +915,38 @@ scalar Upload
 	&ast.Source{Name: "graph/schema/types/case.graphqls", Input: `type Case {
     id: Int!
     name : String!
-    author : String!
+    author : Organization!
     bookmarked: Boolean! @default(value : false)
     integrations : [String]
-    collaborators: [String]
+    collaborators: [User!]
     createdAt : Time!
     updatedAt : Time!
 }
 
 input NewCase  {
     name : String!
-    author : String!
+    author : [NewOrganization]!
     bookmarked: Boolean
     integrations : [String]
-    collaborators: [String]
+    collaborators: [NewUser]
 }
 
 input UpdateCase {
     name : String!
     bookmarked: Boolean
     integrations : [String]
-    collaborators: [String]
+    collaborators: [NewUser]
 }`, BuiltIn: false},
 	&ast.Source{Name: "graph/schema/types/jotter.graphqls", Input: `type Jotter  {
     id : Int!
-    usecase : String!
+    usecase : [Usecase]!
     index: Int!
     name : String!
     content : String!
-    contributors  : [String!]
+    contributors  : [User!]
     completed : Boolean! @default(value: false)
     createdAt : Time!
+    createdBy : User!
     updatedAt : Time!
 }
 
@@ -919,7 +955,7 @@ input NewJotter {
     name : String!
     content : String!
     contributors  : [String!]
-    usecase : String!
+    usecase : [NewUsecase]!
 }
 
 input UpdateJotter {
@@ -931,12 +967,12 @@ input UpdateJotter {
     id : ID!
     name : String!
     email: String!
-    createdBy : String!
+    createdBy : User!
     createdAt: Time!
     updatedAt: Time!
-    cases :  [String]
-    usecases : [String]
-    members : [String]
+    cases :  [Case]
+    usecases : [Usecase]
+    members : [User]
 }
 
 input NewOrganization {
@@ -958,7 +994,7 @@ input UpdateOrganization {
 	&ast.Source{Name: "graph/schema/types/usecase.graphqls", Input: `type Usecase  {
     id: Int!
     title: String!
-    author: String!
+    author: User!
     content: String
     tags: [String]
     completed: Boolean! @default(value : false)
@@ -1435,13 +1471,13 @@ func (ec *executionContext) _Case_author(ctx context.Context, field graphql.Coll
 		Object:   "Case",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Author, nil
+		return ec.resolvers.Case().Author(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1453,9 +1489,9 @@ func (ec *executionContext) _Case_author(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*model.Organization)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNOrganization2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐOrganization(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Case_bookmarked(ctx context.Context, field graphql.CollectedField, obj *model.Case) (ret graphql.Marshaler) {
@@ -1558,13 +1594,13 @@ func (ec *executionContext) _Case_collaborators(ctx context.Context, field graph
 		Object:   "Case",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Collaborators, nil
+		return ec.resolvers.Case().Collaborators(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1573,9 +1609,9 @@ func (ec *executionContext) _Case_collaborators(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*string)
+	res := resTmp.([]*model.User)
 	fc.Result = res
-	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUserᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Case_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Case) (ret graphql.Marshaler) {
@@ -1691,13 +1727,13 @@ func (ec *executionContext) _Jotter_usecase(ctx context.Context, field graphql.C
 		Object:   "Jotter",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Usecase, nil
+		return ec.resolvers.Jotter().Usecase(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1709,9 +1745,9 @@ func (ec *executionContext) _Jotter_usecase(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.([]*model.Usecase)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNUsecase2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUsecase(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Jotter_index(ctx context.Context, field graphql.CollectedField, obj *model.Jotter) (ret graphql.Marshaler) {
@@ -1827,13 +1863,13 @@ func (ec *executionContext) _Jotter_contributors(ctx context.Context, field grap
 		Object:   "Jotter",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Contributors, nil
+		return ec.resolvers.Jotter().Contributors(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1842,9 +1878,9 @@ func (ec *executionContext) _Jotter_contributors(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.([]*model.User)
 	fc.Result = res
-	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUserᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Jotter_completed(ctx context.Context, field graphql.CollectedField, obj *model.Jotter) (ret graphql.Marshaler) {
@@ -1937,6 +1973,40 @@ func (ec *executionContext) _Jotter_createdAt(ctx context.Context, field graphql
 	res := resTmp.(time.Time)
 	fc.Result = res
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Jotter_createdBy(ctx context.Context, field graphql.CollectedField, obj *model.Jotter) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Jotter",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Jotter().CreatedBy(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Jotter_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Jotter) (ret graphql.Marshaler) {
@@ -2496,13 +2566,13 @@ func (ec *executionContext) _Organization_createdBy(ctx context.Context, field g
 		Object:   "Organization",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedBy, nil
+		return ec.resolvers.Organization().CreatedBy(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2514,9 +2584,9 @@ func (ec *executionContext) _Organization_createdBy(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*model.User)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Organization_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Organization) (ret graphql.Marshaler) {
@@ -2598,13 +2668,13 @@ func (ec *executionContext) _Organization_cases(ctx context.Context, field graph
 		Object:   "Organization",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Cases, nil
+		return ec.resolvers.Organization().Cases(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2613,9 +2683,9 @@ func (ec *executionContext) _Organization_cases(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*string)
+	res := resTmp.([]*model.Case)
 	fc.Result = res
-	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
+	return ec.marshalOCase2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐCase(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Organization_usecases(ctx context.Context, field graphql.CollectedField, obj *model.Organization) (ret graphql.Marshaler) {
@@ -2629,13 +2699,13 @@ func (ec *executionContext) _Organization_usecases(ctx context.Context, field gr
 		Object:   "Organization",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Usecases, nil
+		return ec.resolvers.Organization().Usecases(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2644,9 +2714,9 @@ func (ec *executionContext) _Organization_usecases(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*string)
+	res := resTmp.([]*model.Usecase)
 	fc.Result = res
-	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
+	return ec.marshalOUsecase2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUsecase(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Organization_members(ctx context.Context, field graphql.CollectedField, obj *model.Organization) (ret graphql.Marshaler) {
@@ -2675,9 +2745,9 @@ func (ec *executionContext) _Organization_members(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*string)
+	res := resTmp.([]*model.User)
 	fc.Result = res
-	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3244,13 +3314,13 @@ func (ec *executionContext) _Usecase_author(ctx context.Context, field graphql.C
 		Object:   "Usecase",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Author, nil
+		return ec.resolvers.Usecase().Author(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3262,9 +3332,9 @@ func (ec *executionContext) _Usecase_author(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*model.User)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Usecase_content(ctx context.Context, field graphql.CollectedField, obj *model.Usecase) (ret graphql.Marshaler) {
@@ -3555,13 +3625,13 @@ func (ec *executionContext) _Usecase_cases(ctx context.Context, field graphql.Co
 		Object:   "Usecase",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Cases, nil
+		return ec.resolvers.Usecase().Cases(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5030,7 +5100,7 @@ func (ec *executionContext) unmarshalInputNewCase(ctx context.Context, obj inter
 			}
 		case "author":
 			var err error
-			it.Author, err = ec.unmarshalNString2string(ctx, v)
+			it.Author, err = ec.unmarshalNNewOrganization2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewOrganization(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5048,7 +5118,7 @@ func (ec *executionContext) unmarshalInputNewCase(ctx context.Context, obj inter
 			}
 		case "collaborators":
 			var err error
-			it.Collaborators, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			it.Collaborators, err = ec.unmarshalONewUser2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUser(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5090,7 +5160,7 @@ func (ec *executionContext) unmarshalInputNewJotter(ctx context.Context, obj int
 			}
 		case "usecase":
 			var err error
-			it.Usecase, err = ec.unmarshalNString2string(ctx, v)
+			it.Usecase, err = ec.unmarshalNNewUsecase2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUsecase(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5288,7 +5358,7 @@ func (ec *executionContext) unmarshalInputUpdateCase(ctx context.Context, obj in
 			}
 		case "collaborators":
 			var err error
-			it.Collaborators, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			it.Collaborators, err = ec.unmarshalONewUser2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUser(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5494,36 +5564,54 @@ func (ec *executionContext) _Case(ctx context.Context, sel ast.SelectionSet, obj
 		case "id":
 			out.Values[i] = ec._Case_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Case_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "author":
-			out.Values[i] = ec._Case_author(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Case_author(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "bookmarked":
 			out.Values[i] = ec._Case_bookmarked(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "integrations":
 			out.Values[i] = ec._Case_integrations(ctx, field, obj)
 		case "collaborators":
-			out.Values[i] = ec._Case_collaborators(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Case_collaborators(ctx, field, obj)
+				return res
+			})
 		case "createdAt":
 			out.Values[i] = ec._Case_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Case_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -5550,44 +5638,76 @@ func (ec *executionContext) _Jotter(ctx context.Context, sel ast.SelectionSet, o
 		case "id":
 			out.Values[i] = ec._Jotter_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "usecase":
-			out.Values[i] = ec._Jotter_usecase(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Jotter_usecase(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "index":
 			out.Values[i] = ec._Jotter_index(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Jotter_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "content":
 			out.Values[i] = ec._Jotter_content(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "contributors":
-			out.Values[i] = ec._Jotter_contributors(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Jotter_contributors(ctx, field, obj)
+				return res
+			})
 		case "completed":
 			out.Values[i] = ec._Jotter_completed(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
 			out.Values[i] = ec._Jotter_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "createdBy":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Jotter_createdBy(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "updatedAt":
 			out.Values[i] = ec._Jotter_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -5690,37 +5810,64 @@ func (ec *executionContext) _Organization(ctx context.Context, sel ast.Selection
 		case "id":
 			out.Values[i] = ec._Organization_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Organization_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "email":
 			out.Values[i] = ec._Organization_email(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdBy":
-			out.Values[i] = ec._Organization_createdBy(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Organization_createdBy(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "createdAt":
 			out.Values[i] = ec._Organization_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Organization_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "cases":
-			out.Values[i] = ec._Organization_cases(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Organization_cases(ctx, field, obj)
+				return res
+			})
 		case "usecases":
-			out.Values[i] = ec._Organization_usecases(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Organization_usecases(ctx, field, obj)
+				return res
+			})
 		case "members":
 			out.Values[i] = ec._Organization_members(ctx, field, obj)
 		default:
@@ -5932,18 +6079,27 @@ func (ec *executionContext) _Usecase(ctx context.Context, sel ast.SelectionSet, 
 		case "id":
 			out.Values[i] = ec._Usecase_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "title":
 			out.Values[i] = ec._Usecase_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "author":
-			out.Values[i] = ec._Usecase_author(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Usecase_author(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "content":
 			out.Values[i] = ec._Usecase_content(ctx, field, obj)
 		case "tags":
@@ -5951,27 +6107,36 @@ func (ec *executionContext) _Usecase(ctx context.Context, sel ast.SelectionSet, 
 		case "completed":
 			out.Values[i] = ec._Usecase_completed(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
 			out.Values[i] = ec._Usecase_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Usecase_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "collaborators":
 			out.Values[i] = ec._Usecase_collaborators(ctx, field, obj)
 		case "bookmarked":
 			out.Values[i] = ec._Usecase_bookmarked(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "cases":
-			out.Values[i] = ec._Usecase_cases(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Usecase_cases(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6467,8 +6632,48 @@ func (ec *executionContext) unmarshalNNewOrganization2githubᚗcomᚋvickywane�
 	return ec.unmarshalInputNewOrganization(ctx, v)
 }
 
+func (ec *executionContext) unmarshalNNewOrganization2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewOrganization(ctx context.Context, v interface{}) ([]*model.NewOrganization, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.NewOrganization, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalONewOrganization2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewOrganization(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
 func (ec *executionContext) unmarshalNNewUsecase2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUsecase(ctx context.Context, v interface{}) (model.NewUsecase, error) {
 	return ec.unmarshalInputNewUsecase(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNNewUsecase2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUsecase(ctx context.Context, v interface{}) ([]*model.NewUsecase, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.NewUsecase, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalONewUsecase2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUsecase(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalNNewUser2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUser(ctx context.Context, v interface{}) (model.NewUser, error) {
@@ -7019,6 +7224,18 @@ func (ec *executionContext) unmarshalONewCase2ᚖgithubᚗcomᚋvickywaneᚋusec
 	return &res, err
 }
 
+func (ec *executionContext) unmarshalONewOrganization2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewOrganization(ctx context.Context, v interface{}) (model.NewOrganization, error) {
+	return ec.unmarshalInputNewOrganization(ctx, v)
+}
+
+func (ec *executionContext) unmarshalONewOrganization2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewOrganization(ctx context.Context, v interface{}) (*model.NewOrganization, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalONewOrganization2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewOrganization(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) unmarshalONewUsecase2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUsecase(ctx context.Context, v interface{}) (model.NewUsecase, error) {
 	return ec.unmarshalInputNewUsecase(ctx, v)
 }
@@ -7048,6 +7265,38 @@ func (ec *executionContext) unmarshalONewUsecase2ᚖgithubᚗcomᚋvickywaneᚋu
 		return nil, nil
 	}
 	res, err := ec.unmarshalONewUsecase2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUsecase(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalONewUser2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUser(ctx context.Context, v interface{}) (model.NewUser, error) {
+	return ec.unmarshalInputNewUser(ctx, v)
+}
+
+func (ec *executionContext) unmarshalONewUser2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUser(ctx context.Context, v interface{}) ([]*model.NewUser, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.NewUser, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalONewUser2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUser(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalONewUser2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUser(ctx context.Context, v interface{}) (*model.NewUser, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalONewUser2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐNewUser(ctx, v)
 	return &res, err
 }
 
@@ -7202,6 +7451,86 @@ func (ec *executionContext) marshalOUsecase2ᚖgithubᚗcomᚋvickywaneᚋusecas
 
 func (ec *executionContext) marshalOUser2githubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
 	return ec._User(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOUser2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOUser2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUser(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOUser2ᚕᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNUser2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUser(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋvickywaneᚋusecaseᚑserverᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {

@@ -1,25 +1,25 @@
 type Case {
     id: Int!
     name : String!
-    author : String!
+    author : Organization!
     bookmarked: Boolean! @default(value : false)
     integrations : [String]
-    collaborators: [String]
+    collaborators: [User!]
     createdAt : Time!
     updatedAt : Time!
 }
 
 input NewCase  {
     name : String!
-    author : String!
+    author : [NewOrganization]!
     bookmarked: Boolean
     integrations : [String]
-    collaborators: [String]
+    collaborators: [NewUser]
 }
 
 input UpdateCase {
     name : String!
     bookmarked: Boolean
     integrations : [String]
-    collaborators: [String]
+    collaborators: [NewUser]
 }

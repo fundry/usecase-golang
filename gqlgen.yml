@@ -34,8 +34,6 @@ resolver:
 autobind:
   - "github.com/vickywane/usecase-server/graph/model"
 
-# This section declares type mapping between the GraphQL and go type systems
-#
 # The first line in each type will be used as defaults for resolver arguments and
 # modelgen, the others will be allowed when binding to fields. Configure them to
 # your liking
@@ -62,3 +60,35 @@ models:
         resolver: true
       bookmarkedUsecase:
         resolver: true
+  Case:
+    fields:
+      author:
+        resolver: true
+      collaborators:
+        resolver: true
+  Organization:
+    fields:
+      createdBy:
+        resolver: true
+      cases:
+        resolver: true
+      usecases:
+        resolver: true
+      member:
+        resolver: true
+  Jotter:
+    fields:
+      usecase:
+        resolver: true
+      contributors:
+        resolver: true
+      createdBy:
+        resolver: true
+  Usecase:
+    fields:
+      author:
+        resolver: true
+      cases:
+        resolver: true
+
+
