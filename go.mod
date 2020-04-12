@@ -11,6 +11,7 @@ require (
 	github.com/go-pg/pg/v9 v9.1.5
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
+	github.com/rs/cors v1.7.0
 	github.com/theckman/yacspin v0.8.0 // indirect
 	github.com/vektah/dataloaden v0.3.0 // indirect
 	github.com/vektah/gqlparser/v2 v2.0.1

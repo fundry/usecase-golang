@@ -5,6 +5,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi"
+	"github.com/rs/cors"
 
 	"log"
 	"net/http"
@@ -18,10 +19,10 @@ import (
 )
 
 //Todo Implement Auth --in progress
+// Todo Check d difference btwn GIN & CHI for performance
 
 func main() {
 	 defaultPort := "4040"
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort
@@ -33,7 +34,11 @@ func main() {
 
 	route := chi.NewRouter()
 
-	route.Use(middlewares.AuthMiddleware())
+	route.Use(middlewares.AuthMiddleware() , cors.New(cors.Options{
+		AllowedOrigins:         []string{"http://localhost:3000/"},
+		AllowCredentials:       true,
+		Debug:                  true,
+	}).Handler)
 
 	route.Route("/graphql", func(route chi.Router){
 		route.Use(dataloaders.NewMiddleware(Database)...)
@@ -48,7 +53,6 @@ func main() {
 
 		var serve = handler.NewDefaultServer(schema)
 		serve.Use(extension.FixedComplexityLimit(300))
-
 		route.Handle("/", serve)
 	})
 
